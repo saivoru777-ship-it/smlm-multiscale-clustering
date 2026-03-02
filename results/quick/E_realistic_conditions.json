@@ -1,0 +1,65 @@
+{
+  "experiment": "E_realistic_conditions",
+  "n_replicates": 3,
+  "results": {
+    "localization_precision": {
+      "5": {
+        "ms_tpr": 1.0
+      },
+      "10": {
+        "ms_tpr": 1.0
+      },
+      "20": {
+        "ms_tpr": 1.0
+      },
+      "30": {
+        "ms_tpr": 1.0
+      },
+      "50": {
+        "ms_tpr": 1.0
+      },
+      "75": {
+        "ms_tpr": 1.0
+      },
+      "100": {
+        "ms_tpr": 1.0
+      }
+    },
+    "blinking_rate": {
+      "1": {
+        "ms_tpr": 1.0,
+        "reduction": 1.0040087409895229
+      },
+      "3": {
+        "ms_tpr": 1.0,
+        "reduction": 1.015593622252218
+      },
+      "5": {
+        "ms_tpr": 1.0,
+        "reduction": 1.025560556860395
+      },
+      "10": {
+        "ms_tpr": 1.0,
+        "reduction": 1.0512472476472998
+      },
+      "20": {
+        "ms_tpr": 1.0,
+        "reduction": 1.1044987184649584
+      }
+    },
+    "frame_count": {
+      "20": {
+        "ms_tpr": 1.0
+      },
+      "100": {
+        "ms_tpr": 1.0
+      },
+      "500": {
+        "ms_tpr": 1.0
+      },
+      "2000": {
+        "ms_tpr": 1.0
+      }
+    }
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "experiment": "D_geometry",
+  "n_replicates": 3,
+  "results": {
+    "cluster_radius": {
+      "10": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      },
+      "15": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      },
+      "20": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      },
+      "50": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      },
+      "100": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      },
+      "200": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      },
+      "500": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      }
+    },
+    "n_clusters": {
+      "5": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      },
+      "10": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      },
+      "20": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      },
+      "50": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      },
+      "100": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      }
+    },
+    "cluster_shape": {
+      "gaussian": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      },
+      "elongated": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      },
+      "ring": {
+        "ms_tpr": 1.0,
+        "dbscan_tpr": 1.0,
+        "ripley_tpr": 1.0
+      }
+    },
+    "hard_regime": {
+      "f=0.005,r=75": {
+        "f_clust": 0.005,
+        "radius_nm": 75,
+        "ms_tpr": 0.0
+      },
+      "f=0.01,r=75": {
+        "f_clust": 0.01,
+        "radius_nm": 75,
+        "ms_tpr": 0.3333333333333333
+      },
+      "f=0.02,r=75": {
+        "f_clust": 0.02,
+        "radius_nm": 75,
+        "ms_tpr": 1.0
+      },
+      "f=0.05,r=15": {
+        "f_clust": 0.05,
+        "radius_nm": 15,
+        "ms_tpr": 1.0
+      },
+      "f=0.05,r=30": {
+        "f_clust": 0.05,
+        "radius_nm": 30,
+        "ms_tpr": 1.0
+      },
+      "f=0.10,r=15": {
+        "f_clust": 0.1,
+        "radius_nm": 15,
+        "ms_tpr": 1.0
+      },
+      "f=0.02,r=15": {
+        "f_clust": 0.02,
+        "radius_nm": 15,
+        "ms_tpr": 1.0
+      }
+    }
+  }
+}

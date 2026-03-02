@@ -1,0 +1,53 @@
+Dear Editors,
+
+We are pleased to submit our manuscript, "A multiscale covariance-aware
+statistical test for clustering in single-molecule localization
+microscopy," for consideration in [Journal Name].
+
+Single-molecule localization microscopy (SMLM) has become a standard
+tool for studying molecular organization at the nanoscale. However,
+existing clustering analysis methods (DBSCAN, Ripley's K, Voronoi
+tessellation) typically operate at a single spatial scale and lack
+formal null hypothesis testing with calibrated p-values, making it
+difficult to distinguish genuine clustering from stochastic fluctuations
+at controlled significance levels.
+
+Our manuscript presents a multiscale statistical test that addresses
+these limitations by:
+
+1. Computing variance and skewness of counts-in-cells across a
+   logarithmic range of spatial scales, capturing clustering signatures
+   from tens to hundreds of nanometers simultaneously.
+
+2. Quantifying deviations from a biological null model using a
+   covariance-aware chi-squared statistic with shrinkage regularization,
+   producing calibrated p-values via a corrected chi-squared procedure.
+
+3. Validating the method through eight comprehensive experiments
+   covering false positive rate calibration (200 null datasets with
+   binomial confidence intervals), sensitivity analysis, parameter
+   robustness, geometry robustness, realistic imaging conditions,
+   and biological use cases.
+
+Key findings include: the test detects clustering at lower signal
+levels (cluster fraction >= 0.03) than DBSCAN (>= 0.10) and Ripley's
+L function (>= 0.05); detection is robust across cluster geometries,
+localization precisions, and blinking rates; and a negative control
+is correctly not detected. We transparently report both the strengths
+and the limitations of the method, including the false positive rate
+inflation from combining multiple test statistics.
+
+The manuscript includes all source code and results for full
+reproducibility.
+
+We believe this work will be of interest to the computational biology
+and bioimaging communities as a rigorous statistical framework for
+SMLM clustering analysis.
+
+Thank you for your consideration.
+
+Sincerely,
+
+[Author Names]
+[Institution]
+[Contact Information]

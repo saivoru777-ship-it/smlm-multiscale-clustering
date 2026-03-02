@@ -5,3 +5,9 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# Large result files (regenerate with comprehensive_study.py)
+results/final/A_fpr.json
+results/final/F_biological_cases.json
+results/quick/A_fpr.json
+results/quick/F_biological_cases.json

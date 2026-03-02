@@ -1,0 +1,25 @@
+{
+  "experiment": "H_runtime",
+  "results": {
+    "500": {
+      "n_molecules": 500,
+      "n_localizations": 2514,
+      "wall_clock_seconds": 10.09
+    },
+    "1000": {
+      "n_molecules": 1000,
+      "n_localizations": 5013,
+      "wall_clock_seconds": 10.7
+    },
+    "2000": {
+      "n_molecules": 2000,
+      "n_localizations": 10047,
+      "wall_clock_seconds": 12.45
+    },
+    "5000": {
+      "n_molecules": 5000,
+      "n_localizations": 25122,
+      "wall_clock_seconds": 20.91
+    }
+  }
+}
