@@ -1,0 +1,30 @@
+{
+  "experiment": "I_experimental_data",
+  "dataset": "NUP107_STORM (4TU.ResearchData, Heydarian et al. 2021)",
+  "pixel_size_nm": 100.0,
+  "roi_nm": 5000.0,
+  "n_npcs": 30,
+  "n_background": 2000,
+  "results": {
+    "npc_storm": {
+      "label": "NPC STORM + background (30 NPCs)",
+      "n_points": 5321,
+      "p_variance": 0.0,
+      "p_skewness": 0.0,
+      "chi2_variance": 4769790.8863947615,
+      "chi2_skewness": 444211.8555670229,
+      "detected": true,
+      "condition_number": 443935.9054380606
+    },
+    "csr_control": {
+      "label": "CSR negative control (same N)",
+      "n_points": 5321,
+      "p_variance": 0.4408705842173739,
+      "p_skewness": 0.32175414316870365,
+      "chi2_variance": 9.035634495614552,
+      "chi2_skewness": 11.029463372639432,
+      "detected": false,
+      "condition_number": 16420.800085157625
+    }
+  }
+}

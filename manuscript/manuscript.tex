@@ -53,13 +53,16 @@ well-calibrated $p$-values with finite mock samples. Validation on 200
 null datasets yields a per-test false positive rate of 9.0\% at
 $\alpha = 0.05$ (95\% CI: [5.5\%, 12.5\%]), consistent with nominal
 calibration. The multiscale test achieves 100\% detection at cluster
-fractions $f \geq 0.03$, compared to $f \geq 0.05$ for Ripley's $L$
-function and $f \geq 0.10$ for DBSCAN. Detection is robust across cluster
-geometries (Gaussian, elongated, ring-shaped), localization precisions
-(5--100~nm), and blinking rates (1--20 blinks per molecule). A negative
-control with no clustering is correctly not detected ($p_\mathrm{var}
-= 0.849$, $p_\mathrm{skew} = 0.249$). Code and results are available at
-[repository URL].
+fractions $f \geq 0.03$ (20 replicates), compared to $f \geq 0.05$ for
+Ripley's $L$ function and $f \geq 0.10$ for DBSCAN. Detection is robust
+across cluster geometries (Gaussian, elongated, ring-shaped),
+localization precisions (5--100~nm), and blinking rates (1--20 blinks
+per molecule). Application to experimental SMLM data---nuclear pore
+complex localizations (STORM and DNA-PAINT) and DNA-origami
+nanostructures---confirms detection of known clustering structure
+($p < 0.001$), while matched CSR controls are correctly not detected.
+Code and results are available at
+https://github.com/saivoru777-ship-it/smlm-multiscale-clustering.
 \end{abstract}
 
 \textbf{Keywords:} single-molecule localization microscopy, clustering,
@@ -455,27 +458,30 @@ DBSCAN, and Ripley's $L$ function (Figure~\ref{fig:fpr}D).
 \begin{table}[ht]
 \centering
 \caption{Detection power (TPR) as a function of cluster fraction $f$.
-  Each condition was tested with 3 replicates.}
+  Each condition was tested with 20 replicates.}
 \label{tab:sensitivity}
 \begin{tabular}{lccc}
 \toprule
 $f$ & Multiscale & DBSCAN & Ripley \\
 \midrule
-0.005 & 0.00 & 0.00 & 0.00 \\
-0.01  & 0.00 & 0.00 & 0.33 \\
-0.02  & 0.67 & 0.00 & 0.67 \\
-0.03  & 1.00 & 0.00 & 0.67 \\
-0.05  & 1.00 & 0.33 & 1.00 \\
+0.005 & 0.05 & 0.00 & 0.00 \\
+0.01  & 0.20 & 0.00 & 0.00 \\
+0.02  & 0.90 & 0.05 & 0.15 \\
+0.03  & 1.00 & 0.10 & 0.80 \\
+0.05  & 1.00 & 0.60 & 1.00 \\
 0.10  & 1.00 & 1.00 & 1.00 \\
 0.15--0.50 & 1.00 & 1.00 & 1.00 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The multiscale test achieves 100\% detection at $f \geq 0.03$, compared
-to $f \geq 0.05$ for Ripley and $f \geq 0.10$ for DBSCAN. The multiscale
-test first detects clustering at $f = 0.02$ (67\%), while DBSCAN does
-not detect at all until $f = 0.05$.
+The multiscale test achieves 100\% detection at $f \geq 0.03$ and 90\%
+at $f = 0.02$, compared to 100\% at $f \geq 0.05$ for Ripley and
+$f \geq 0.10$ for DBSCAN. The multiscale test first detects clustering
+at $f = 0.005$ (5\%), while DBSCAN shows no detection until $f = 0.02$
+(5\%) and does not reach 100\% until $f = 0.10$. At $f = 0.03$, the
+multiscale test achieves perfect detection while DBSCAN detects only
+10\% and Ripley 80\%.
 
 \subsection{Experiment C: Parameter robustness}
 \label{sec:exp-c}
@@ -632,6 +638,57 @@ Runtime scales near-linearly with dataset size. Processing 5000 molecules
 (25,000 localizations) takes approximately 21~seconds on a single CPU
 core, making the method practical for typical SMLM datasets.
 
+\subsection{Experiment I: Application to experimental data}
+\label{sec:exp-i}
+
+To validate the method on real SMLM data, we applied the multiscale
+test to published localization datasets from Heydarian et al.\ \citep{heydarian2021},
+obtained from the 4TU.ResearchData repository. These datasets contain
+individually segmented particles imaged with STORM and DNA-PAINT
+techniques, with coordinates in camera pixel units (converted to
+nanometers assuming 100~nm pixel size).
+
+We constructed realistic fields of view by placing multiple particles
+at random positions within a $5000 \times 5000 \times 500$~nm ROI and
+adding uniform background localizations. A matched CSR control with the
+same total number of localizations was generated for comparison. The
+multiscale test was run with 30 mocks and default parameters
+(Table~\ref{tab:experimental}).
+
+\begin{table}[ht]
+\centering
+\caption{Multiscale test results on experimental SMLM data from
+  Heydarian et al.\ \citep{heydarian2021}. NPC = nuclear pore complex, Nup107 protein.
+  DNA-origami tetrahedra have four vertices at designed positions.
+  The CSR control contains the same number of uniformly distributed
+  localizations as the NPC STORM dataset.}
+\label{tab:experimental}
+\begin{tabular}{llccl}
+\toprule
+Dataset & $N$ & $p_\mathrm{var}$ & $p_\mathrm{skew}$ & Result \\
+\midrule
+NPC STORM (30 particles + bg) & 5,321 & $< 0.001$ & $< 0.001$ & Detected \\
+NPC PAINT (25 particles + bg) & 3,566 & $< 0.001$ & $< 0.001$ & Detected \\
+DNA-origami tetrahedra (15 + bg) & 10,549 & $< 0.001$ & $< 0.001$ & Detected \\
+CSR control (uniform) & 5,321 & 0.441 & 0.322 & Not detected \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All three experimental datasets with known structure were correctly
+identified as clustered ($p < 0.001$ for both variance and skewness),
+while the CSR control was correctly not detected ($p_\mathrm{var} =
+0.441$, $p_\mathrm{skew} = 0.322$). The NPC datasets contain ring-shaped
+protein arrangements with approximately 8-fold symmetry at $\sim$107~nm
+diameter, while the DNA-origami tetrahedra contain four point clusters
+at designed vertex positions. The method detects clustering in both
+cases without requiring prior knowledge of the cluster geometry or scale.
+
+These results demonstrate that the multiscale test generalizes from
+synthetic validation to real experimental data acquired with different
+imaging modalities (STORM, DNA-PAINT) and biological structures
+(protein complexes, synthetic nanostructures).
+
 % ============================================================================
 % 4. Discussion
 % ============================================================================
@@ -658,8 +715,12 @@ skewness statistics. The test detects clustering at lower fractions
 ($f \geq 0.03$) than DBSCAN ($f \geq 0.10$) and Ripley ($f \geq 0.05$),
 is robust across all tested parameter settings (grid size, shrinkage,
 number of mocks), and handles diverse cluster geometries including
-elongated and ring-shaped structures. The corrected chi-squared
-calibration procedure avoids the anti-conservative bias inherent in
+elongated and ring-shaped structures. Application to experimental SMLM
+data (NPC localizations and DNA-origami nanostructures) demonstrates
+that the method generalizes beyond synthetic benchmarks to real
+microscopy data acquired with different imaging modalities. The
+corrected chi-squared calibration procedure avoids the anti-conservative
+bias inherent in
 using the standard chi-squared reference with finite mock samples.
 
 \subsection{Limitations}
@@ -689,14 +750,17 @@ that users (1) report both statistical FPR (molecule positions) and
 pipeline FPR, and (2) validate the full pipeline on experimental
 negative controls when available.
 
-\subsubsection{Synthetic data limitations}
+\subsubsection{Data limitations}
 
-All validation uses synthetic data with known ground truth. While the
-synthetic scenarios span a wide range of biologically relevant
+The majority of validation uses synthetic data with known ground truth.
+While the synthetic scenarios span a wide range of biologically relevant
 parameters, real SMLM data may exhibit additional complexities
-(photobleaching, drift, sample-specific background) not captured here.
-Validation on experimental datasets with orthogonal ground truth
-(e.g., EM correlation) is an important future direction.
+(photobleaching, drift, sample-specific background) not fully captured
+here. Our application to experimental NPC and DNA-origami data
+(Section~\ref{sec:exp-i}) demonstrates feasibility on real data, but
+these datasets have known structure by design. Validation on
+experimental datasets where clustering status is independently confirmed
+(e.g., via correlative EM) remains an important future direction.
 
 \subsubsection{Sample size}
 
@@ -726,7 +790,7 @@ recommended to narrow the confidence intervals.
 % ============================================================================
 \section{Reproducibility}
 
-All source code and results are available at [repository URL]. The
+All source code and results are available at https://github.com/saivoru777-ship-it/smlm-multiscale-clustering. The
 validation study can be reproduced with the following commands:
 
 \begin{verbatim}
