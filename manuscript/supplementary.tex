@@ -57,48 +57,50 @@ $\alpha$ & Combined FPR & $n$ detected & 95\% CI lower & 95\% CI upper
 \begin{table}[ht]
 \centering
 \caption{Grid size sweep. CSR data ($f = 0$) and clustered data
-  ($f = 0.3$), 3 replicates each.}
+  ($f = 0.3$), 20 replicates each.}
 \label{tab:s2_grid}
 \begin{tabular}{lcc}
 \toprule
 Grid size & FPR & TPR \\
 \midrule
-16  & 0.00 & 1.00 \\
-32  & 0.00 & 1.00 \\
-64  & 0.00 & 1.00 \\
-128 & 0.00 & 1.00 \\
+16  & 0.15 & 1.00 \\
+32  & 0.05 & 1.00 \\
+64  & 0.05 & 1.00 \\
+128 & 0.10 & 1.00 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[ht]
 \centering
-\caption{Shrinkage parameter sweep with mean condition numbers.}
+\caption{Shrinkage parameter sweep with mean condition numbers (20 replicates).}
 \label{tab:s2_shrinkage}
 \begin{tabular}{lccr}
 \toprule
 $\lambda$ & FPR & TPR & Mean $\kappa$ \\
 \midrule
-0.01 & 0.00 & 1.00 & 629 \\
-0.05 & 0.00 & 1.00 & 592 \\
-0.10 & 0.00 & 1.00 & 472 \\
-0.20 & 0.33 & 1.00 & 767 \\
-0.50 & 0.00 & 1.00 & 594 \\
+0.01 & 0.10 & 1.00 & 600 \\
+0.05 & 0.00 & 1.00 & 619 \\
+0.10 & 0.15 & 1.00 & 600 \\
+0.20 & 0.05 & 1.00 & 529 \\
+0.50 & 0.10 & 1.00 & 413 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[ht]
 \centering
-\caption{Number of mocks sweep.}
+\caption{Number of mocks sweep (20 replicates).}
 \label{tab:s2_mocks}
 \begin{tabular}{lcc}
 \toprule
 $M$ & FPR & TPR \\
 \midrule
-5  & 0.33 & 1.00 \\
-10 & 0.00 & 1.00 \\
-20 & 0.33 & 1.00 \\
+5   & 0.25 & 1.00 \\
+10  & 0.10 & 1.00 \\
+20  & 0.10 & 1.00 \\
+50  & 0.15 & 1.00 \\
+100 & 0.10 & 1.00 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -130,14 +132,14 @@ $r_\mathrm{lat}$ (nm) & Pipeline FPR & TPR & Mean reduction \\
 \begin{table}[ht]
 \centering
 \caption{Detection power in the hard regime (low cluster fraction
-  and/or small cluster radius), 3 replicates each.}
+  and/or small cluster radius), 10 replicates each.}
 \label{tab:s3_hard}
 \begin{tabular}{llc}
 \toprule
 Configuration & Parameters & Multiscale TPR \\
 \midrule
-Very sparse, standard radius & $f = 0.005$, $r = 75$~nm & 0.00 \\
-Sparse, standard radius      & $f = 0.01$, $r = 75$~nm  & 0.33 \\
+Very sparse, standard radius & $f = 0.005$, $r = 75$~nm & 0.20 \\
+Sparse, standard radius      & $f = 0.01$, $r = 75$~nm  & 0.30 \\
 Low fraction, standard radius & $f = 0.02$, $r = 75$~nm & 1.00 \\
 Moderate, very small radius   & $f = 0.05$, $r = 15$~nm & 1.00 \\
 Moderate, small radius        & $f = 0.05$, $r = 30$~nm & 1.00 \\
@@ -154,7 +156,7 @@ Low fraction, very small      & $f = 0.02$, $r = 15$~nm & 1.00 \\
 
 \begin{table}[ht]
 \centering
-\caption{Localization precision sweep ($f = 0.3$, 3 replicates).}
+\caption{Localization precision sweep ($f = 0.3$, 10 replicates).}
 \label{tab:s4_precision}
 \begin{tabular}{lc}
 \toprule
@@ -173,7 +175,7 @@ $\sigma_{xy}$ (nm) & Multiscale TPR \\
 
 \begin{table}[ht]
 \centering
-\caption{Blinking rate sweep ($f = 0.3$, 3 replicates). Reduction factor
+\caption{Blinking rate sweep ($f = 0.3$, 10 replicates). Reduction factor
   = (raw localizations) / (merged molecules).}
 \label{tab:s4_blink}
 \begin{tabular}{lcc}
@@ -181,7 +183,7 @@ $\sigma_{xy}$ (nm) & Multiscale TPR \\
 Blinks/molecule & Multiscale TPR & Reduction factor \\
 \midrule
 1  & 1.00 & 1.004 \\
-3  & 1.00 & 1.016 \\
+3  & 1.00 & 1.015 \\
 5  & 1.00 & 1.026 \\
 10 & 1.00 & 1.051 \\
 20 & 1.00 & 1.104 \\
@@ -191,7 +193,7 @@ Blinks/molecule & Multiscale TPR & Reduction factor \\
 
 \begin{table}[ht]
 \centering
-\caption{Frame count sweep ($f = 0.3$, 3 replicates).}
+\caption{Frame count sweep ($f = 0.3$, 10 replicates).}
 \label{tab:s4_frames}
 \begin{tabular}{lc}
 \toprule
@@ -220,10 +222,12 @@ Frames & Multiscale TPR \\
 \toprule
 Molecules & Localizations & Wall clock (s) \\
 \midrule
-500   & 2,514   & 10.1 \\
-1,000 & 5,013   & 10.7 \\
-2,000 & 10,047  & 12.5 \\
-5,000 & 25,122  & 20.9 \\
+500    & 2,514    & 29.7  \\
+1,000  & 5,013    & 31.6  \\
+2,000  & 10,047   & 35.1  \\
+5,000  & 25,122   & 51.3  \\
+10,000 & 50,014   & 247.4 \\
+20,000 & 99,999   & 3015  \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -239,8 +243,8 @@ Molecules & Localizations & Wall clock (s) \\
 \includegraphics[width=0.8\textwidth]{figures/figS1_blinking.pdf}
 \caption{\textbf{Figure S1: Blinking correction performance.}
   Reduction factors (raw localizations / merged molecules) as a function
-  of blinking rate. Even at 20 blinks per molecule, the correction
-  reduces the localization count by only $\sim$10\%, indicating
+  of blinking rate (10 replicates). Even at 20 blinks per molecule, the
+  correction reduces the localization count by only $\sim$10\%, indicating
   conservative merging. Detection power (TPR) remains 1.0 across all
   blinking rates.}
 \label{fig:s1}
@@ -249,7 +253,7 @@ Molecules & Localizations & Wall clock (s) \\
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.8\textwidth]{figures/figS2_conditions.pdf}
-\caption{\textbf{Figure S2: Realistic SMLM conditions.}
+\caption{\textbf{Figure S2: Realistic SMLM conditions} (10 replicates).
   \textbf{(A)}~Detection power vs.\ localization precision
   ($\sigma_{xy}$ = 5--100~nm). TPR = 1.0 across all precisions.
   \textbf{(B)}~Detection power vs.\ number of imaging frames
@@ -260,11 +264,12 @@ Molecules & Localizations & Wall clock (s) \\
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.8\textwidth]{figures/figS3_condition_number.pdf}
-\caption{\textbf{Figure S3: Covariance matrix condition numbers.}
-  Condition numbers of the regularized covariance matrix
+\caption{\textbf{Figure S3: Covariance matrix condition numbers} (20
+  replicates). Condition numbers of the regularized covariance matrix
   $\boldsymbol{\Sigma}_\mathrm{reg}$ as a function of the shrinkage
-  parameter $\lambda$. With $\lambda = 0.1$ (default), condition numbers
-  remain below $10^3$, ensuring stable matrix inversion.}
+  parameter $\lambda$. Mean condition numbers range from 413
+  ($\lambda = 0.5$) to 619 ($\lambda = 0.05$), ensuring stable matrix
+  inversion across all settings.}
 \label{fig:s3}
 \end{figure}
 
@@ -273,8 +278,9 @@ Molecules & Localizations & Wall clock (s) \\
 \includegraphics[width=0.8\textwidth]{figures/figS4_runtime.pdf}
 \caption{\textbf{Figure S4: Runtime scaling.}
   Wall-clock time for the full pipeline as a function of the number of
-  molecules (500--5000). Scaling is near-linear, with 5000 molecules
-  processed in approximately 21 seconds.}
+  molecules (500--20,000). Scaling is near-linear up to 5000 molecules
+  ($\sim$51~s), with superlinear growth at larger sizes due to
+  covariance estimation and mock generation costs.}
 \label{fig:s4}
 \end{figure}
 
