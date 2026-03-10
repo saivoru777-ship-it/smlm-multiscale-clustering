@@ -130,12 +130,14 @@ randomness (CSR).
 
 \subsection{Multiscale statistics as structural fingerprints}
 
-Beyond binary detection, a key insight is that the scale-dependent
-variance and skewness curves produced by our method encode structural
-information about the underlying spatial organization. Different
+Rather than identifying clusters at a single predetermined scale, our
+approach reveals scale-dependent statistical signatures that act as
+\emph{multiscale fingerprints of nanoscale molecular organization},
+enabling discrimination between distinct spatial architectures such as
+nanoclusters, ring structures, and membrane domains. Different
 biological structures---synaptic receptor nanoclusters, nuclear pore
-complexes, membrane domains---produce distinct multiscale signatures that
-act as fingerprints of nanoscale molecular organization. These correspond
+complexes, membrane domains---produce distinct signatures in the
+variance and skewness curves computed across spatial scales. These correspond
 to the second and third moments of the count distribution at each scale,
 which together capture the dominant deviations from CSR: excess
 dispersion (variance) and asymmetric tail structure (skewness). Higher
@@ -820,12 +822,15 @@ are difficult to interpret when the data is consistent with CSR. The
 structural fingerprint then provides guidance on which scales to target
 for subsequent segmentation.
 
-In practice, we recommend the following workflow: (1)~apply the
-multiscale test to obtain calibrated $p$-values and the structural
-fingerprint; (2)~if clustering is detected, examine the variance curve
-to identify the dominant scale(s) of organization; (3)~use the peak
-scale to guide parameter selection for segmentation algorithms (e.g.,
-setting DBSCAN $\varepsilon$ near the peak scale).
+We envision the multiscale test as a diagnostic step in SMLM analysis
+pipelines: first determine whether clustering exists statistically, then
+apply segmentation methods to identify cluster locations. In practice,
+we recommend: (1)~apply the multiscale test to obtain calibrated
+$p$-values and the structural fingerprint; (2)~if clustering is
+detected, examine the variance curve to identify the dominant scale(s)
+of organization; (3)~use the peak scale to guide parameter selection for
+segmentation algorithms (e.g., setting DBSCAN $\varepsilon$ near the
+peak scale).
 
 \subsection{Relationship to existing methods}
 
