@@ -410,9 +410,13 @@ HDBSCAN addresses DBSCAN's fixed-$\varepsilon$ limitation by
 automatically discovering clusters at varying densities. We use
 $\mathrm{min\_cluster\_size} = 15$ with the scikit-learn implementation.
 Detection uses the same permutation criterion as DBSCAN (cluster count
-exceeding the 95th percentile of mock cluster counts). Unlike DBSCAN,
-HDBSCAN requires no distance parameter, making it a fairer comparison
-with our parameter-free multiscale test.
+exceeding the 95th percentile of mock cluster counts). We include
+HDBSCAN because, like our method, it requires no distance parameter,
+making it the fairest density-based comparison. However, we emphasize
+that HDBSCAN is designed as a cluster \emph{identification} algorithm,
+not a statistical \emph{detection} test; the permutation-calibrated
+detection criterion is our adaptation to enable comparison on the
+detection question.
 
 \subsubsection{Ripley's $L$ function}
 
@@ -545,15 +549,19 @@ skewness signatures of four biologically motivated synthetic structures
 
 These distinct signatures suggest that the multiscale variance curve
 acts as a \emph{structural fingerprint} of nanoscale molecular
-organization. The peak scale of the variance excess encodes the
-characteristic cluster size, the width of the excess reflects the
-spatial extent of organization, and the skewness amplitude captures the
-degree of asymmetry in the point distribution. This moves beyond the
-binary ``clustered or not'' question toward a richer characterization of
-\emph{what kind} of spatial organization is present---a question of
-direct biological relevance when distinguishing, for example,
-nanoclusters from membrane domains or scaffolded from diffusive
-organization.
+organization. Three quantitative descriptors can be derived from the
+curves: (1)~\emph{peak scale}---the spatial scale at which the variance
+excess is maximal, encoding the characteristic cluster size;
+(2)~\emph{excess width}---the number of scales with variance
+significantly above the mock envelope, reflecting whether organization
+is concentrated at one scale (nanoclusters) or distributed broadly
+(domains); and (3)~\emph{skewness amplitude}---the maximum skewness
+relative to the mock mean, capturing the degree of asymmetry in the
+point distribution. Together, these move beyond the binary ``clustered
+or not'' question toward a richer characterization of \emph{what kind}
+of spatial organization is present---a question of direct biological
+relevance when distinguishing, for example, nanoclusters from membrane
+domains or scaffolded from diffusive organization.
 
 Developing a formal classification framework based on these fingerprints
 is beyond the scope of this work but represents a promising direction.
@@ -580,6 +588,37 @@ clustering signal. However, only the multiscale variance curve reveals
 the \emph{two-scale structure} of the organization, demonstrating the
 diagnostic advantage of the fingerprint approach over methods that
 produce a single detection statistic.
+
+% ────────────────────────────────────────────────────────────
+\subsection{Robustness to inhomogeneous background density}
+\label{sec:gradient}
+
+A natural concern for any spatial statistics method that compares against
+a homogeneous null model is sensitivity to spatial intensity gradients.
+In real SMLM experiments, illumination gradients, membrane curvature, or
+localization efficiency variations can produce non-uniform background
+density without genuine clustering. To quantify the method's robustness,
+we tested synthetic datasets with linear density gradients (density
+increasing from one side of the ROI to the other) at varying strengths,
+with no clustering present (3 replicates each):
+
+\begin{itemize}
+  \item \textbf{1.2$\times$ gradient}: 0/3 detected (robust)
+  \item \textbf{1.5$\times$ gradient}: 1/3 detected (borderline)
+  \item \textbf{2.0$\times$ gradient}: 3/3 detected (false positive)
+  \item \textbf{3.0--5.0$\times$ gradient}: 3/3 detected (false positive)
+\end{itemize}
+
+Radial gradients (Gaussian density falloff from the center) also produced
+false positives at all tested strengths (5/5 detected). The method is
+robust to mild intensity variations ($\lesssim$20\%), which are typical
+within the small ROIs ($\sim$5~$\mu$m) commonly used in SMLM analysis.
+However, stronger gradients are detected as significant deviations from
+CSR---which is mathematically correct, since a gradient is a genuine
+departure from spatial uniformity, but may not reflect biological
+clustering. Users should ensure approximately uniform illumination within
+the analysis ROI, or consider the inhomogeneous Poisson extension
+discussed in Section~\ref{sec:discussion-limitations}.
 
 % ────────────────────────────────────────────────────────────
 \subsection{Synthetic validation}
@@ -781,6 +820,13 @@ are difficult to interpret when the data is consistent with CSR. The
 structural fingerprint then provides guidance on which scales to target
 for subsequent segmentation.
 
+In practice, we recommend the following workflow: (1)~apply the
+multiscale test to obtain calibrated $p$-values and the structural
+fingerprint; (2)~if clustering is detected, examine the variance curve
+to identify the dominant scale(s) of organization; (3)~use the peak
+scale to guide parameter selection for segmentation algorithms (e.g.,
+setting DBSCAN $\varepsilon$ near the peak scale).
+
 \subsection{Relationship to existing methods}
 
 Our method occupies a distinct niche in the SMLM analysis landscape.
@@ -820,6 +866,22 @@ beyond binary detection, connecting the method to the broader question of
 ``what kind of nanoscale organization exists?'' rather than just ``is
 clustering present?''
 
+\subsection{Connection to spatial point process theory}
+
+The counts-in-cells framework can be understood within the broader
+context of spatial point process analysis \citep{diggle2013}. The
+variance-to-mean ratio at each scale is related to the second factorial
+moment measure of the point process, while the skewness connects to the
+third-order structure. These are complementary to the pair correlation
+function (related to Ripley's $K$) and provide a natural multiscale
+decomposition of spatial structure. The conceptual origin in cosmological
+large-scale structure statistics \citep{colombi1994,szapudi1996}
+reflects a deep connection: both SMLM point clouds and galaxy surveys
+require detecting structured departures from spatial randomness in
+finite, noisy point patterns. The covariance-aware chi-squared test with
+shrinkage regularization addresses the same finite-sample challenges
+that arise in both domains.
+
 \subsection{Limitations}
 \label{sec:discussion-limitations}
 
@@ -856,12 +918,20 @@ test first for detection, then use DBSCAN, SR-Tesseler, or other
 segmentation tools---guided by the peak scale of the variance curve---for
 cluster identification.
 
-\subsubsection{Convex hull null model}
+\subsubsection{Sensitivity to density gradients}
 
-The biological null model assumes uniform density within the convex hull.
-In real experiments, spatially varying background (illumination gradients,
-membrane curvature) could violate this assumption. Extension to
-inhomogeneous Poisson null models is an important future direction.
+The convex hull null model assumes uniform density. Our gradient
+robustness tests (Section~\ref{sec:gradient}) show that the method is
+robust to mild intensity variations ($\lesssim$20\%) but detects
+stronger gradients ($\geq$2$\times$) as significant departures from CSR.
+This is mathematically correct---a gradient is a genuine departure from
+spatial uniformity---but may lead to false positives if the gradient
+reflects illumination non-uniformity rather than biological clustering.
+In practice, most SMLM analyses use small ROIs ($\sim$5~$\mu$m) where
+illumination is approximately uniform, and users should verify this
+assumption. Extension to inhomogeneous Poisson null models, where the
+expected intensity is estimated from the data (e.g., via kernel density
+estimation on a coarse grid), would address this limitation.
 
 \subsubsection{Choice of summary statistics}
 
@@ -876,12 +946,19 @@ moments are sufficient for common biological clustering patterns.
 
 \subsubsection{Experimental data scope}
 
-Our experimental validation uses three datasets from a single source
-(Heydarian et al.\ \citep{heydarian2021}). While these span two imaging
-modalities (STORM, DNA-PAINT) and two biological structures (protein
-complexes, synthetic nanostructures), broader validation on diverse
-receptor clustering datasets, membrane protein distributions, and data
-from independent laboratories would further establish generalizability.
+Our experimental validation uses three datasets from Heydarian et al.\
+\citep{heydarian2021}, spanning two imaging modalities (STORM,
+DNA-PAINT) and two structurally distinct targets: nuclear pore complexes
+(ring-shaped protein assemblies with 8-fold symmetry at $\sim$107~nm)
+and DNA-origami tetrahedra (four precisely positioned point clusters).
+This structural diversity---ring geometry versus point clusters, protein
+versus synthetic---is more important than dataset count for establishing
+generalizability. Nonetheless, validation on additional receptor
+clustering datasets (e.g., TCR, BCR, EGFR), membrane protein
+distributions, and data from independent laboratories would further
+strengthen the method's applicability claims. Emerging platforms such as
+ShareLoc \citep{shareloc2022} are making SMLM localization data
+increasingly accessible for such cross-validation.
 
 \subsection{Future work}
 
