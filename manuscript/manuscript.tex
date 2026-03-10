@@ -350,15 +350,20 @@ comparison.
 \subsubsection{DBSCAN}
 
 DBSCAN \citep{ester1996} is run with $\varepsilon = 0.75 \times
-r_\mathrm{cluster}$ (where $r_\mathrm{cluster}$ is the known cluster
-radius in synthetic data, or a user-specified estimate) and
-$\mathrm{min\_samples} = 5$. Detection is determined by permutation
-calibration: the number of DBSCAN clusters in the real data must exceed
-the 95th percentile of cluster counts from the mock datasets.
+r_\mathrm{cluster}$ and $\mathrm{min\_samples} = 5$. Detection is
+determined by permutation calibration: the number of DBSCAN clusters in
+the real data must exceed the 95th percentile of cluster counts from the
+mock datasets. \textbf{Important caveat:} in synthetic experiments,
+$r_\mathrm{cluster}$ is the known ground-truth cluster radius, giving
+DBSCAN an informational advantage that would not be available in practice.
+For experimental data, $r_\mathrm{cluster}$ is set to a user-specified
+estimate (50~nm for NPC datasets, 30~nm for DNA-origami). Our multiscale
+test, by contrast, requires no prior knowledge of cluster scale.
 
 \subsubsection{Ripley's $L$ function}
 
-The $L$ function is evaluated at 50 radii from 0 to 500~nm.
+The $L$ function is evaluated at 15 radii logarithmically spaced from
+20 to 500~nm.
 Detection is determined by envelope testing: the maximum deviation
 $\max_r [L(r) - r]$ in the real data must exceed the 95th percentile of
 the same statistic computed on the mock datasets.
@@ -660,8 +665,9 @@ adding uniform background localizations. A matched CSR control with the
 same total number of localizations was generated for comparison. The
 multiscale test was run with 15 mocks and default parameters. For
 comparison, DBSCAN (with $\varepsilon = 37.5$~nm for NPC/CSR datasets
-and $\varepsilon = 22.5$~nm for tetrahedra, min\_samples~$= 5$) was run
-with the same mock-based permutation calibration
+and $\varepsilon = 22.5$~nm for tetrahedra, min\_samples~$= 5$) and
+Ripley's $L$ function (15 radii from 20--500~nm, envelope test against
+15 mocks) were run with the same mock-based calibration
 (Table~\ref{tab:experimental}).
 
 \begin{table}[ht]
@@ -673,27 +679,28 @@ with the same mock-based permutation calibration
   distributed localizations; the permutation control randomizes the
   NPC STORM positions within the same ROI.}
 \label{tab:experimental}
-\begin{tabular}{llccccc}
+\begin{tabular}{llcccccc}
 \toprule
-Dataset & $N$ & $p_\mathrm{var}$ & $p_\mathrm{skew}$ & MS & DBSCAN \\
+Dataset & $N$ & $p_\mathrm{var}$ & $p_\mathrm{skew}$ & MS & DBSCAN & Ripley \\
 \midrule
-NPC STORM (30 + bg) & 5,526 & $< 0.001$ & $< 0.001$ & Detected & Detected \\
-NPC PAINT (25 + bg) & 4,356 & $< 0.001$ & $< 0.001$ & Detected & Detected \\
-DNA-origami tetra (15 + bg) & 13,268 & $< 0.001$ & $< 0.001$ & Detected & Detected \\
-CSR control (uniform) & 5,526 & 0.710 & 0.895 & Not det. & Not det. \\
-Permutation control & 5,526 & 0.374 & 0.456 & Not det. & Not det. \\
+NPC STORM (30 + bg) & 5,526 & $< 0.001$ & $< 0.001$ & Detected & Detected & Detected \\
+NPC PAINT (25 + bg) & 4,356 & $< 0.001$ & $< 0.001$ & Detected & Detected & Detected \\
+DNA-origami tetra (15 + bg) & 13,268 & $< 0.001$ & $< 0.001$ & Detected & Detected & Detected \\
+CSR control (uniform) & 5,526 & 0.710 & 0.895 & Not det. & Not det. & Not det. \\
+Permutation control & 5,526 & 0.374 & 0.456 & Not det. & Not det. & Not det. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 All three experimental datasets with known structure were correctly
-identified as clustered by both the multiscale test and DBSCAN
-($p < 0.001$ for both variance and skewness). Both negative
-controls---a synthetic CSR dataset and a permutation control created by
-randomizing the NPC STORM positions within the same ROI---were correctly
-not detected by either method ($p_\mathrm{var} = 0.710$,
-$p_\mathrm{skew} = 0.895$ for the CSR control; $p_\mathrm{var} = 0.374$,
-$p_\mathrm{skew} = 0.456$ for the permutation control). The NPC
+identified as clustered by all three methods---the multiscale test,
+DBSCAN, and Ripley's $L$ function ($p < 0.001$ for both variance and
+skewness). Both negative controls---a synthetic CSR dataset and a
+permutation control created by randomizing the NPC STORM positions within
+the same ROI---were correctly not detected by any method
+($p_\mathrm{var} = 0.710$, $p_\mathrm{skew} = 0.895$ for the CSR
+control; $p_\mathrm{var} = 0.374$, $p_\mathrm{skew} = 0.456$ for the
+permutation control). The NPC
 datasets contain ring-shaped protein arrangements with approximately
 8-fold symmetry at $\sim$107~nm diameter, while the DNA-origami
 tetrahedra contain four point clusters at designed vertex positions.
