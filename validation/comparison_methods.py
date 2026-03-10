@@ -238,3 +238,74 @@ class RipleysKBaseline:
 
         K = K * volume / (n * (n - 1))
         return K
+
+
+# ===========================================================================
+# HDBSCAN
+# ===========================================================================
+
+@dataclass
+class HDBSCANResult:
+    labels: np.ndarray      # (N,) cluster IDs, -1 = noise
+    n_clusters: int
+    n_noise: int
+    min_cluster_size: int
+
+    @property
+    def cluster_mask(self) -> np.ndarray:
+        """Boolean mask of non-noise points."""
+        return self.labels >= 0
+
+
+class HDBSCANBaseline:
+    """
+    HDBSCAN clustering baseline using scikit-learn.
+
+    Unlike DBSCAN, HDBSCAN does not require a fixed epsilon parameter,
+    making it a more modern density-based alternative that automatically
+    discovers clusters at varying densities.
+
+    Parameters
+    ----------
+    min_cluster_size : int
+        Minimum number of points to form a cluster.
+    min_samples : int or None
+        Number of samples in a neighborhood for a point to be core.
+        If None, defaults to min_cluster_size.
+    """
+
+    def __init__(self, min_cluster_size: int = 15, min_samples: Optional[int] = None):
+        self.min_cluster_size = min_cluster_size
+        self.min_samples = min_samples
+
+    def fit(self, positions: np.ndarray) -> HDBSCANResult:
+        """
+        Run HDBSCAN on localization positions.
+
+        Parameters
+        ----------
+        positions : ndarray, shape (N, 3) in nm
+
+        Returns
+        -------
+        HDBSCANResult
+        """
+        from sklearn.cluster import HDBSCAN
+
+        positions = np.asarray(positions, dtype=float)
+        clusterer = HDBSCAN(
+            min_cluster_size=self.min_cluster_size,
+            min_samples=self.min_samples,
+            metric='euclidean',
+        )
+        labels = clusterer.fit_predict(positions)
+
+        n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+        n_noise = int((labels == -1).sum())
+
+        return HDBSCANResult(
+            labels=labels,
+            n_clusters=n_clusters,
+            n_noise=n_noise,
+            min_cluster_size=self.min_cluster_size,
+        )

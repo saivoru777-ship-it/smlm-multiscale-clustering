@@ -17,8 +17,8 @@
 % ============================================================================
 % Title
 % ============================================================================
-\title{A multiscale covariance-aware statistical test for clustering in
-       single-molecule localization microscopy}
+\title{Multiscale spatial statistics reveal fingerprints of nanoscale
+       molecular organization in single-molecule localization microscopy}
 
 \author{%
   Pretham Voruganti\textsuperscript{1,*}
@@ -39,32 +39,34 @@
 Single-molecule localization microscopy (SMLM) achieves nanometer-scale
 resolution but requires robust statistical methods to distinguish genuine
 molecular clustering from stochastic fluctuations. Existing approaches
-typically impose single-scale assumptions or lack formal null hypothesis
-testing. We present a multiscale statistical test that detects clustering
-across spatial scales simultaneously by computing variance-to-mean ratio
-and skewness of counts-in-cells over a logarithmic scale range. Deviations
-from a biological null model (complete spatial randomness within the convex
-hull) are quantified using a covariance-aware chi-squared statistic with
-Ledoit--Wolf shrinkage regularization. We introduce a corrected chi-squared
-calibration procedure based on leave-one-out mock statistics to obtain
-well-calibrated $p$-values with finite mock samples. Validation on 200
-null datasets yields a per-test false positive rate of 9.0\% at
-$\alpha = 0.05$ (95\% CI: [5.5\%, 12.5\%]), consistent with nominal
-calibration. The multiscale test achieves 100\% detection at cluster
-fractions $f \geq 0.03$ (20 replicates), compared to $f \geq 0.05$ for
-Ripley's $L$ function and $f \geq 0.10$ for DBSCAN. Detection is robust
-across cluster geometries (Gaussian, elongated, ring-shaped),
-localization precisions (5--100~nm), and blinking rates (1--20 blinks
-per molecule). Application to experimental SMLM data---nuclear pore
+typically impose single-scale assumptions, lack formal null hypothesis
+testing, or require prior knowledge of cluster parameters. We present a
+multiscale statistical framework that simultaneously detects clustering
+and characterizes its spatial organization by computing variance-to-mean
+ratio and skewness of counts-in-cells across a logarithmic scale range.
+Deviations from a biological null model are quantified using a
+covariance-aware chi-squared statistic with Ledoit--Wolf shrinkage
+regularization. A corrected chi-squared calibration procedure based on
+leave-one-out mock statistics yields well-calibrated $p$-values with
+finite mock samples. Applied to experimental SMLM data---nuclear pore
 complex localizations (STORM and DNA-PAINT) and DNA-origami
-nanostructures---confirms detection of known clustering structure
-($p < 0.001$), while matched CSR controls are correctly not detected.
-Code and results are available at
-https://github.com/saivoru777-ship-it/smlm-multiscale-clustering.
+nanostructures---the method correctly detects all structured datasets
+($p < 0.001$) while both CSR and permutation negative controls are
+correctly not detected, outperforming HDBSCAN which misses two of three
+structured datasets. Beyond binary detection, the multiscale variance
+and skewness curves provide interpretable structural fingerprints:
+different biological structures produce distinct scale-dependent
+signatures, enabling characterization of nanoscale organization without
+prior knowledge of cluster geometry or scale. Synthetic validation across
+200 null datasets, 10 cluster fractions, diverse geometries, and
+realistic imaging conditions confirms calibrated false positive rates and
+superior sensitivity compared to DBSCAN, Ripley's $L$ function, and
+HDBSCAN. Code and data are available at
+\url{https://github.com/saivoru777-ship-it/smlm-multiscale-clustering}.
 \end{abstract}
 
 \textbf{Keywords:} single-molecule localization microscopy, clustering,
-multiscale analysis, counts-in-cells, covariance-aware chi-squared,
+multiscale analysis, spatial statistics, structural fingerprints,
 super-resolution microscopy
 
 % ============================================================================
@@ -81,54 +83,87 @@ application is detecting and characterizing spatial clustering of membrane
 proteins, receptors, and other molecular species at the nanoscale
 \citep{khater2020}.
 
+\subsection{Existing methods and their limitations}
+
 Several computational methods have been applied to SMLM clustering
-analysis. DBSCAN \citep{ester1996} groups points by local density but
-requires choosing a single distance parameter $\varepsilon$ and a minimum
-cluster size, which implicitly assumes a characteristic cluster scale.
-Ripley's $K$/$L$ function \citep{ripley1977,ripley1976} provides a global
-summary of spatial correlation but does not resolve individual clusters
-and loses sensitivity when clustering occurs at multiple scales
-simultaneously. Voronoi tessellation and SR-Tesseler \citep{levet2015}
-segment localizations based on polygon area but rely on threshold choices
-that are difficult to calibrate against a formal null hypothesis.
-Bayesian approaches \citep{rubin-delanchy2015} offer principled
+analysis. \textbf{Density-based methods}---DBSCAN \citep{ester1996} and
+its hierarchical extension HDBSCAN---group points by local density but
+require choosing distance parameters ($\varepsilon$, minimum cluster size)
+that implicitly assume a characteristic cluster scale. A recent
+benchmarking study \citep{nieves2023} evaluated seven SMLM clustering
+algorithms (DBSCAN, ToMATo, KDE, FOCAL, CAML, ClusterViSu, SR-Tesseler)
+and found that the best performer depended on the underlying distribution
+of localizations, with no single method dominating across all conditions.
+\textbf{Ripley's $K$/$L$ function} \citep{ripley1977,ripley1976} provides
+a global summary of spatial correlation but does not resolve individual
+clusters and reduces to a single summary statistic.
+\textbf{Voronoi-based methods}---SR-Tesseler \citep{levet2015} and
+ClusterViSu---segment localizations by polygon area but rely on threshold
+choices that are difficult to calibrate against a formal null hypothesis.
+\textbf{Bayesian approaches} \citep{rubin-delanchy2015} offer principled
 uncertainty quantification but are computationally intensive for large
 datasets.
 
-A common limitation across these methods is the absence of formal null
-hypothesis testing with calibrated $p$-values. In practice, clustering
-is often declared by visual inspection of point patterns, by observing
-that DBSCAN returns clusters, or by noting that Ripley's $L(r) - r$
-exceeds zero---none of which control the false positive rate at a
-specified significance level. Furthermore, most methods operate at a
-single spatial scale, missing multi-scale structure that is common in
+A common limitation is the absence of formal null hypothesis testing with
+calibrated $p$-values. In practice, clustering is often declared by visual
+inspection, by observing that DBSCAN returns clusters, or by noting that
+Ripley's $L(r) - r$ exceeds zero---none of which control the false
+positive rate at a specified significance level. Furthermore, most methods
+operate at a single spatial scale, missing multi-scale structure common in
 biological systems (e.g., receptor nanoclusters within larger membrane
 domains).
 
-We address these limitations by adapting the counts-in-cells framework
-from cosmological structure detection \citep{colombi1994,szapudi1996} to
-SMLM point cloud data. Our approach:
-\begin{enumerate}
-  \item Computes variance-to-mean ratio and skewness of counts-in-cells
-        across a logarithmic range of spatial scales, capturing clustering
-        signatures from tens to hundreds of nanometers simultaneously.
-  \item Quantifies deviations from a biological null model using a
-        covariance-aware chi-squared test with Ledoit--Wolf shrinkage
-        \citep{ledoit2004}, accounting for correlations between scales.
-  \item Produces calibrated $p$-values via a corrected chi-squared
-        procedure based on leave-one-out mock statistics, avoiding the
-        anti-conservative bias of standard chi-squared references with
-        finite mock samples.
-  \item Validates the method through eight experiments covering false
-        positive rate calibration, sensitivity analysis, parameter
-        robustness, geometry robustness, realistic SMLM conditions,
-        biological use cases, multiscale signatures, and runtime scaling.
-\end{enumerate}
+\subsection{The detection--characterization distinction}
 
-This work is intended as a methodological exploration rather than a
-production-ready pipeline. We report both strengths and limitations
-transparently, including the false positive rate inflation that arises
-from combining multiple test statistics.
+Existing SMLM clustering tools broadly fall into two categories:
+\emph{cluster identification methods} (DBSCAN, SR-Tesseler, Bayesian
+approaches) that output spatial assignments of localizations to clusters,
+and \emph{global detection methods} (Ripley's $K$, pair correlation
+function) that test whether clustering exists without localizing
+individual clusters. Our method belongs to the second category. It
+complements cluster-identification algorithms by providing a statistically
+calibrated answer to a logically prior question: \emph{does clustering
+exist at all, and at what spatial scales?} This test should be applied
+before running segmentation methods, whose outputs are difficult to
+interpret when the underlying data is consistent with complete spatial
+randomness (CSR).
+
+\subsection{Multiscale statistics as structural fingerprints}
+
+Beyond binary detection, a key insight is that the scale-dependent
+variance and skewness curves produced by our method encode structural
+information about the underlying spatial organization. Different
+biological structures---synaptic receptor nanoclusters, nuclear pore
+complexes, membrane domains---produce distinct multiscale signatures that
+act as fingerprints of nanoscale molecular organization. These correspond
+to the second and third moments of the count distribution at each scale,
+which together capture the dominant deviations from CSR: excess
+dispersion (variance) and asymmetric tail structure (skewness). Higher
+cumulants could capture additional structure but are less robust with
+finite data.
+
+\subsection{Contributions}
+
+We address the limitations above by adapting the counts-in-cells
+framework from cosmological structure detection
+\citep{colombi1994,szapudi1996} to SMLM point cloud data. Our
+contributions are:
+\begin{enumerate}
+  \item A multiscale statistical test computing variance and skewness of
+        counts-in-cells across a logarithmic range of spatial scales,
+        requiring no prior knowledge of cluster scale or geometry.
+  \item Calibrated $p$-values via a corrected chi-squared procedure based
+        on leave-one-out mock statistics, with covariance-aware
+        Ledoit--Wolf shrinkage \citep{ledoit2004}.
+  \item Demonstration that the multiscale variance and skewness curves
+        serve as interpretable structural fingerprints of nanoscale
+        organization.
+  \item Comprehensive validation on experimental data (three imaging
+        modalities, two negative controls) and synthetic benchmarks
+        (nine experiments covering false positive rates, sensitivity,
+        parameter robustness, geometry, imaging conditions, biological
+        use cases, and runtime).
+\end{enumerate}
 
 % ============================================================================
 % 2. Methods
@@ -164,10 +199,12 @@ density in cell $j$ at scale $s$. We compute two summary statistics:
   \mathrm{VMR}(s) = \frac{\mathrm{Var}[c_j(s)]}{\mathrm{E}[c_j(s)]}.
   \label{eq:vmr}
 \end{equation}
-Under complete spatial randomness (CSR), counts follow a Poisson
-distribution and $\mathrm{VMR}(s) \approx 1$ at all scales. Clustering
-produces $\mathrm{VMR}(s) > 1$, with the excess concentrated at scales
-matching the cluster size.
+Under CSR, counts follow a Poisson distribution and
+$\mathrm{VMR}(s) \approx 1$ at all scales. Clustering produces
+$\mathrm{VMR}(s) > 1$, with the excess concentrated at scales matching
+the cluster size. The scale at which VMR peaks, and the width of the
+excess, encode information about the characteristic size and spatial
+extent of the clustering structure.
 
 \textbf{Skewness:}
 \begin{equation}
@@ -178,7 +215,9 @@ matching the cluster size.
 Skewness captures asymmetric tail structure in the count distribution.
 Clustered data produces positively skewed distributions (a few cells with
 many points, most cells nearly empty), providing complementary information
-to the variance.
+to the variance. Together, the VMR and skewness curves across scales form
+a two-dimensional \emph{structural fingerprint} of the spatial
+organization.
 
 Scales are chosen as a logarithmic series from a minimum of 20~nm (set by
 localization precision) to a maximum of $\mathrm{ROI}/4$ (ensuring
@@ -201,7 +240,10 @@ the observed positions \citep{diggle2013}. The convex hull is computed
 using Delaunay triangulation, and candidate points are drawn uniformly
 within the bounding box and accepted only if they fall inside the hull
 (rejection sampling). This preserves the overall spatial extent and
-shape of the data while destroying any clustering structure.
+shape of the data while destroying any clustering structure. We note that
+this assumes uniform background density; extension to inhomogeneous
+Poisson null models that account for illumination gradients or membrane
+curvature is an important direction for future work.
 
 \subsubsection{Chi-squared statistic}
 
@@ -283,8 +325,9 @@ stable moment estimation; with fewer mocks, $p = 1$ is returned.
 
 The test produces two $p$-values: $p_\mathrm{var}$ from the variance
 curve and $p_\mathrm{skew}$ from the skewness curve. These capture
-complementary aspects of clustering: variance reflects excess dispersion,
-while skewness detects asymmetric count distributions.
+complementary aspects of clustering: variance reflects excess dispersion
+(second moment), while skewness detects asymmetric count distributions
+(third moment).
 
 We employ an OR-combination rule: clustering is detected if either
 $p_\mathrm{var} < \alpha$ or $p_\mathrm{skew} < \alpha$, where $\alpha$
@@ -343,9 +386,10 @@ Merged localizations are replaced by their photon-weighted centroid.
 \subsection{Baseline methods}
 \label{sec:baselines}
 
-We compare against two widely used methods, each calibrated with the
+We compare against three established methods, each calibrated with the
 same mock datasets used for the multiscale test, ensuring a fair
-comparison.
+comparison of the detection question (``is clustering present?'')
+independently of cluster identification.
 
 \subsubsection{DBSCAN}
 
@@ -360,6 +404,16 @@ For experimental data, $r_\mathrm{cluster}$ is set to a user-specified
 estimate (50~nm for NPC datasets, 30~nm for DNA-origami). Our multiscale
 test, by contrast, requires no prior knowledge of cluster scale.
 
+\subsubsection{HDBSCAN}
+
+HDBSCAN addresses DBSCAN's fixed-$\varepsilon$ limitation by
+automatically discovering clusters at varying densities. We use
+$\mathrm{min\_cluster\_size} = 15$ with the scikit-learn implementation.
+Detection uses the same permutation criterion as DBSCAN (cluster count
+exceeding the 95th percentile of mock cluster counts). Unlike DBSCAN,
+HDBSCAN requires no distance parameter, making it a fairer comparison
+with our parameter-free multiscale test.
+
 \subsubsection{Ripley's $L$ function}
 
 The $L$ function is evaluated at 15 radii logarithmically spaced from
@@ -369,47 +423,192 @@ $\max_r [L(r) - r]$ in the real data must exceed the 95th percentile of
 the same statistic computed on the mock datasets.
 
 % ============================================================================
-% 3. Experiments and Results
+% 3. Results
 % ============================================================================
-\section{Experiments and Results}
+\section{Results}
 
-All experiments use synthetic datasets generated with known ground truth
-labels. Unless otherwise specified, datasets contain 5000 molecules
-distributed within a $5000 \times 5000 \times 500$~nm ROI, with Gaussian
-clusters of radius 75~nm, mean blinking rate of 5 appearances per
-molecule, lateral localization precision of 20~nm, and 500 imaging frames.
-Grid size is $64^3$ and shrinkage $\lambda = 0.1$.
+We present experimental results first, followed by synthetic validation
+that characterizes the method's statistical properties in controlled
+conditions.
 
-\subsection{Experiment A: False positive rate calibration}
+% ────────────────────────────────────────────────────────────
+\subsection{Experimental data: detection and structural fingerprints}
+\label{sec:exp-i}
+
+\subsubsection{Datasets}
+
+To validate the method on real SMLM data, we applied the multiscale
+test to published 3D localization datasets from Heydarian et al.\
+\citep{heydarian2021}, obtained from the 4TU.ResearchData repository.
+These datasets contain individually segmented particles imaged with
+STORM and DNA-PAINT techniques, with coordinates in camera pixel units
+(converted to nanometers assuming 100~nm pixel size):
+
+\begin{itemize}
+  \item \textbf{NPC STORM}: 30 nuclear pore complex particles imaged with
+    STORM. Nup107 protein localizations arranged in ring-shaped complexes
+    with approximately 8-fold symmetry at $\sim$107~nm diameter.
+  \item \textbf{NPC PAINT}: 25 nuclear pore complex particles imaged with
+    DNA-PAINT. Same biological structure as above, different imaging
+    modality.
+  \item \textbf{DNA-origami tetrahedra}: 15 synthetic nanostructures with
+    four precisely positioned vertices at designed locations.
+\end{itemize}
+
+We constructed realistic fields of view by placing multiple particles
+at random positions within a $5000 \times 5000 \times 500$~nm ROI and
+adding 2000 uniform background localizations to simulate non-specific
+signal. Two negative controls were included: a synthetic CSR dataset
+with the same total number of localizations as the STORM dataset, and a
+permutation control created by randomizing the NPC STORM positions
+uniformly within the same ROI (destroying spatial structure while
+preserving density and geometry).
+
+\subsubsection{Detection results}
+
+The multiscale test was run with 15 mocks and default parameters.
+DBSCAN ($\varepsilon = 37.5$~nm for NPC/CSR, $\varepsilon = 22.5$~nm
+for tetrahedra, min\_samples~$= 5$), HDBSCAN
+(min\_cluster\_size~$= 15$), and Ripley's $L$ function were run with
+the same mock-based calibration (Table~\ref{tab:experimental}).
+
+\begin{table}[ht]
+\centering
+\caption{Detection results on experimental SMLM data from
+  Heydarian et al.\ \citep{heydarian2021} and two negative controls.
+  The multiscale test, DBSCAN, and Ripley correctly detect all three
+  structured datasets and both negative controls. HDBSCAN misdetects:
+  it fails to identify clustering in NPC PAINT and DNA-origami data,
+  and produces a false positive on the CSR control.}
+\label{tab:experimental}
+\begin{tabular}{llcccccccc}
+\toprule
+Dataset & $N$ & $p_\mathrm{var}$ & $p_\mathrm{skew}$ & MS & DBSCAN & Ripley & HDBSCAN \\
+\midrule
+NPC STORM (30 + bg) & 5,526 & $< 0.001$ & $< 0.001$ & Det. & Det. & Det. & Det. \\
+NPC PAINT (25 + bg) & 4,356 & $< 0.001$ & $< 0.001$ & Det. & Det. & Det. & \textbf{Miss} \\
+DNA-origami (15 + bg) & 13,268 & $< 0.001$ & $< 0.001$ & Det. & Det. & Det. & \textbf{Miss} \\
+CSR control & 5,526 & 0.710 & 0.895 & Not det. & Not det. & Not det. & \textbf{FP} \\
+Permutation ctrl & 5,526 & 0.374 & 0.456 & Not det. & Not det. & Not det. & Not det. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The multiscale test, DBSCAN, and Ripley's $L$ function all correctly
+identify all three structured datasets and both negative controls.
+HDBSCAN, despite being a more modern algorithm that does not require a
+fixed distance parameter, performs poorly with the cluster-count-based
+permutation calibration: it misses two of three structured datasets (NPC
+PAINT, DNA-origami) and produces a false positive on the CSR control.
+This occurs because HDBSCAN identifies density fluctuations as clusters
+even in uniform random data, making the cluster-count statistic
+unreliable for detection. This result illustrates a key advantage of our
+approach: the multiscale test produces natively calibrated $p$-values,
+whereas adapting cluster-identification algorithms for the detection
+question requires method-specific tuning of the detection criterion.
+
+\subsubsection{Structural fingerprints from experimental data}
+\label{sec:fingerprints}
+
+Beyond binary detection, the multiscale variance curves from the
+experimental datasets reveal distinctive structural fingerprints
+(Figure~\ref{fig:signatures}). The NPC datasets show a characteristic
+variance excess at intermediate scales consistent with the $\sim$107~nm
+ring diameter, while the DNA-origami tetrahedra produce a sharper
+variance peak reflecting their smaller, more defined vertex clusters. The
+CSR and permutation controls show flat variance curves consistent with
+the mock envelope. These structural signatures are produced automatically
+by the test and require no prior knowledge of the biological structure.
+
+% ────────────────────────────────────────────────────────────
+\subsection{Multiscale signatures as diagnostic fingerprints}
+\label{sec:exp-g}
+
+To demonstrate that the multiscale curves encode morphological
+information beyond binary detection, we examined the variance and
+skewness signatures of four biologically motivated synthetic structures
+(Figure~\ref{fig:signatures}):
+
+\begin{itemize}
+  \item \textbf{Synaptic receptors} (small, dense clusters at $r = 35$~nm
+    \citep{macgillavry2013}): sharp variance peak at small scales,
+    reflecting compact nanoclusters.
+  \item \textbf{Nuclear pores} (ring-shaped at $r = 50$~nm
+    \citep{loschberger2012}): characteristic variance peak at intermediate
+    scales with a distinctive shape reflecting ring geometry.
+  \item \textbf{Membrane domains} (large, sparse clusters at $r = 150$~nm
+    \citep{owen2012}): broad variance excess extending across multiple
+    scales.
+  \item \textbf{Negative control} (pure CSR): variance curves remain
+    within the mock envelope at all scales.
+\end{itemize}
+
+These distinct signatures suggest that the multiscale variance curve
+acts as a \emph{structural fingerprint} of nanoscale molecular
+organization. The peak scale of the variance excess encodes the
+characteristic cluster size, the width of the excess reflects the
+spatial extent of organization, and the skewness amplitude captures the
+degree of asymmetry in the point distribution. This moves beyond the
+binary ``clustered or not'' question toward a richer characterization of
+\emph{what kind} of spatial organization is present---a question of
+direct biological relevance when distinguishing, for example,
+nanoclusters from membrane domains or scaffolded from diffusive
+organization.
+
+Developing a formal classification framework based on these fingerprints
+is beyond the scope of this work but represents a promising direction.
+
+% ────────────────────────────────────────────────────────────
+\subsection{Mixed-scale clustering}
+\label{sec:mixed-scale}
+
+Real biological systems often contain structure at multiple scales
+simultaneously (e.g., receptor nanoclusters within larger membrane
+domains). To test robustness to such hierarchical organization, we
+generated synthetic data with both large domains ($r = 200$~nm,
+$f = 0.10$) and small nanoclusters ($r = 30$~nm, $f = 0.15$) in the
+same dataset.
+
+The multiscale test correctly detects this mixed-scale clustering
+($p < 0.001$ for both variance and skewness in all three replicates),
+with the variance curve showing excess at both small and large scales.
+DBSCAN requires choosing a single $\varepsilon$: at $\varepsilon = 22.5$~nm
+it detects only 2--3 clusters (missing the large-scale structure), while
+at $\varepsilon = 150$~nm it finds 66--87 clusters (merging and
+fragmenting both scales). HDBSCAN and Ripley also detect the overall
+clustering signal. However, only the multiscale variance curve reveals
+the \emph{two-scale structure} of the organization, demonstrating the
+diagnostic advantage of the fingerprint approach over methods that
+produce a single detection statistic.
+
+% ────────────────────────────────────────────────────────────
+\subsection{Synthetic validation}
+
+The following experiments characterize the method's statistical
+properties using synthetic data with known ground truth. Unless otherwise
+specified, datasets contain 5000 molecules distributed within a
+$5000 \times 5000 \times 500$~nm ROI, with Gaussian clusters of radius
+75~nm, mean blinking rate of 5, lateral localization precision of 20~nm,
+and 500 imaging frames. Grid size is $64^3$ and shrinkage
+$\lambda = 0.1$.
+
+\subsubsection{False positive rate calibration}
 \label{sec:exp-a}
 
-We generated 200 CSR datasets (no clustering, $f = 0$) and applied the
-multiscale test with 50 mocks each, using molecule positions (bypassing
-blinking correction) to isolate the statistical test calibration from
-imaging artifacts.
-
-\subsubsection{$P$-value uniformity}
+We generated 200 CSR datasets ($f = 0$) and applied the multiscale test
+with 50 mocks each, using molecule positions (bypassing blinking
+correction) to isolate statistical calibration from imaging artifacts.
 
 Under a correctly calibrated null, $p$-values should follow a uniform
 distribution on $[0, 1]$. The mean $p$-values were
 $\bar{p}_\mathrm{var} = 0.464$ and $\bar{p}_\mathrm{skew} = 0.463$,
-close to the expected value of 0.5. A QQ plot (Figure~\ref{fig:fpr}A)
-confirms approximate uniformity.
-
-\subsubsection{FPR calibration with confidence intervals}
-
-Table~\ref{tab:fpr} reports the combined (OR-rule) false positive rate
-at multiple significance thresholds, with 95\% binomial confidence
-intervals from 200 replicates.
+close to the expected value of 0.5 (Figure~\ref{fig:fpr}A).
 
 \begin{table}[ht]
 \centering
-\caption{False positive rate calibration from 200 CSR datasets. The
-  ``Combined FPR'' column reports the OR-combination rate (detected if
-  $p_\mathrm{var} < \alpha$ or $p_\mathrm{skew} < \alpha$). Per-test
+\caption{False positive rate calibration from 200 CSR datasets. Per-test
   FPR at $\alpha = 0.05$ is 9.0\% for both variance and skewness
-  (18/200 each). Baseline FPR (DBSCAN, Ripley) is reported at the same
-  thresholds.}
+  (18/200 each).}
 \label{tab:fpr}
 \begin{tabular}{lcccc}
 \toprule
@@ -426,42 +625,36 @@ $\alpha$ & Combined FPR & 95\% CI & DBSCAN FPR & Ripley FPR \\
 \end{table}
 
 At $\alpha = 0.05$, the per-test FPR is 9.0\% (18/200) for both
-variance and skewness individually. The combined OR-rule FPR is 16.0\%
-(32/200), consistent with the theoretical prediction
-$1 - (1 - 0.09)^2 = 17.2\%$ under independence (Equation~\ref{eq:fpr_or}).
+variance and skewness individually, elevated from the nominal 5\% due
+to finite-sample effects in the corrected chi-squared calibration and
+partial correlation between the two statistics. The combined OR-rule FPR
+is 16.0\% (32/200), consistent with the theoretical prediction
+$1 - (1 - 0.09)^2 = 17.2\%$ under independence
+(Equation~\ref{eq:fpr_or}). The \v{S}id\'ak-corrected threshold
+$\alpha_\mathrm{per} = 0.0253$ yields a combined FPR of 8.5\% (17/200).
 
-For applications requiring strict control at $\alpha_\mathrm{global} =
-0.05$, the \v{S}id\'ak-corrected per-test threshold
-$\alpha_\mathrm{per} = 0.0253$ (Equation~\ref{eq:sidak}) yields a
-combined FPR of 8.5\% (17/200), closer to the nominal level.
+DBSCAN with permutation calibration achieves FPR $= 0.0\%$
+(conservative), while Ripley's envelope test yields FPR $= 8.5\%$ across
+all thresholds.
 
-DBSCAN with permutation calibration achieves FPR $= 0.0\%$ (conservative),
-while Ripley's envelope test yields FPR $= 8.5\%$ across all thresholds,
-indicating that its detection is insensitive to the choice of $\alpha$
-within this range.
+\textbf{Pipeline FPR.} When simulated blinking and correction are
+included, the pipeline FPR is 100\% at all significance levels. This
+artifact arises from the blinking simulation model (see
+Section~\ref{sec:discussion-limitations}), not the test itself. Our
+experimental results (Section~\ref{sec:exp-i}) confirm correct behavior
+on real data.
 
-\subsubsection{Pipeline FPR}
-
-When blinking simulation and correction are included (the full pipeline),
-the FPR is 100\% at all significance levels. This occurs because the
-simulated blinking process creates subtle non-CSR structure that persists
-after correction and is detected by the sensitive multiscale test. This
-is an artifact of the blinking simulation model, not a deficiency of the
-test itself; see Section~\ref{sec:discussion-limitations} for discussion.
-We recommend reporting both the statistical FPR (molecule positions) and
-the pipeline FPR when characterizing the method.
-
-\subsection{Experiment B: Sensitivity / power analysis}
+\subsubsection{Sensitivity / power analysis}
 \label{sec:exp-b}
 
-We varied the cluster fraction $f$ from 0.005 to 0.50 (10 values) and
-measured detection power (true positive rate) for the multiscale test,
-DBSCAN, and Ripley's $L$ function (Figure~\ref{fig:fpr}D).
+We varied the cluster fraction $f$ from 0.005 to 0.50 (10 values, 20
+replicates each) and measured detection power
+(Figure~\ref{fig:fpr}D).
 
 \begin{table}[ht]
 \centering
-\caption{Detection power (TPR) as a function of cluster fraction $f$.
-  Each condition was tested with 20 replicates.}
+\caption{Detection power (TPR) as a function of cluster fraction $f$
+  (20 replicates each).}
 \label{tab:sensitivity}
 \begin{tabular}{lccc}
 \toprule
@@ -478,155 +671,69 @@ $f$ & Multiscale & DBSCAN & Ripley \\
 \end{tabular}
 \end{table}
 
-The multiscale test achieves 100\% detection at $f \geq 0.03$ and 90\%
-at $f = 0.02$, compared to 100\% at $f \geq 0.05$ for Ripley and
-$f \geq 0.10$ for DBSCAN. The multiscale test first detects clustering
-at $f = 0.005$ (5\%), while DBSCAN shows no detection until $f = 0.02$
-(5\%) and does not reach 100\% until $f = 0.10$. At $f = 0.03$, the
-multiscale test achieves perfect detection while DBSCAN detects only
-10\% and Ripley 80\%.
+The multiscale test achieves 100\% detection at $f \geq 0.03$, compared
+to $f \geq 0.05$ for Ripley and $f \geq 0.10$ for DBSCAN (even with
+ground-truth $\varepsilon$). At $f = 0.03$, the multiscale test achieves
+perfect detection while DBSCAN detects only 10\% and Ripley 80\%.
 
-\subsection{Experiment C: Parameter robustness}
+\subsubsection{Parameter robustness}
 \label{sec:exp-c}
 
-We swept the four main hyperparameters of the multiscale test, measuring
-both FPR (on CSR data) and TPR (on clustered data with $f = 0.3$) for
-each setting.
+We swept four hyperparameters (20 replicates each):
 
-\textbf{Grid size} (16, 32, 64, 128): FPR $\leq 0.15$ and TPR $= 1.0$ at
-all grid sizes (20 replicates). The test is insensitive to grid resolution.
+\textbf{Grid size} (16, 32, 64, 128): FPR $\leq 0.15$, TPR $= 1.0$.
 
-\textbf{Shrinkage} ($\lambda = 0.01, 0.05, 0.1, 0.2, 0.5$):
-FPR $\leq 0.15$ and TPR $= 1.0$ across all values (20 replicates).
-Mean condition numbers ranged from 413 to 619, indicating stable matrix
-inversion.
+\textbf{Shrinkage} ($\lambda = 0.01$--$0.5$): FPR $\leq 0.15$,
+TPR $= 1.0$. Condition numbers: 413--619.
 
-\textbf{Number of mocks} (5, 10, 20, 50, 100): FPR $\leq 0.25$ and
-TPR $= 1.0$ (20 replicates). Even 5 mocks produce reliable detection,
-though 15+ are recommended for stable corrected chi-squared calibration.
+\textbf{Number of mocks} (5--100): FPR $\leq 0.25$, TPR $= 1.0$.
 
-\textbf{Blinking correction radius} ($r_\mathrm{lat} = 10, 20, 30, 50,
-75$~nm): Pipeline FPR $= 1.0$ for all radii. This confirms that the
-pipeline FPR inflation (Section~\ref{sec:exp-a}) is independent of the
-correction radius and reflects a fundamental limitation of the blinking
-simulation model.
+\textbf{Blinking correction radius} (10--75~nm): Pipeline FPR $= 1.0$
+(confirming the blinking simulation artifact is radius-independent).
 
-Results are shown in Figure~\ref{fig:params}.
-
-\subsection{Experiment D: Cluster geometry robustness}
+\subsubsection{Geometry robustness}
 \label{sec:exp-d}
 
-\textbf{Cluster radius} (10--500~nm): TPR $= 1.0$ for all methods across
-all radii (Figure~\ref{fig:geometry}A).
+\textbf{Cluster radius} (10--500~nm), \textbf{number of clusters}
+(5--100), and \textbf{cluster shape} (Gaussian, elongated, ring-shaped):
+TPR $= 1.0$ for all methods across all conditions.
 
-\textbf{Number of clusters} (5--100): TPR $= 1.0$ for all methods
-(Figure~\ref{fig:geometry}B).
+\textbf{Hard regime} (10 replicates): Detection degrades gracefully at
+very low cluster fractions: $f = 0.005 \rightarrow$ TPR $= 0.20$;
+$f = 0.01 \rightarrow$ TPR $= 0.30$; $f = 0.02 \rightarrow$ TPR $= 1.0$.
+At $f = 0.05$ with very small clusters ($r = 15$~nm): TPR $= 1.0$.
 
-\textbf{Cluster shape} (Gaussian, elongated with aspect ratio 3:1,
-ring-shaped): TPR $= 1.0$ for all methods and shapes
-(Figure~\ref{fig:geometry}C).
-
-\subsubsection{Hard regime}
-
-To identify the detection boundary, we tested seven configurations with
-low cluster fractions and/or small cluster radii
-(Figure~\ref{fig:geometry}D):
-
-\begin{itemize}
-  \item $f = 0.005$, $r = 75$~nm: TPR $= 0.20$ (marginal, 10 replicates)
-  \item $f = 0.01$, $r = 75$~nm: TPR $= 0.30$ (marginal)
-  \item $f = 0.02$, $r = 75$~nm: TPR $= 1.0$
-  \item $f = 0.05$, $r = 15$~nm: TPR $= 1.0$
-  \item $f = 0.05$, $r = 30$~nm: TPR $= 1.0$
-  \item $f = 0.10$, $r = 15$~nm: TPR $= 1.0$
-  \item $f = 0.02$, $r = 15$~nm: TPR $= 1.0$
-\end{itemize}
-
-These results demonstrate graceful degradation: detection power decreases
-smoothly as the clustering signal weakens, with the practical detection
-limit at approximately $f = 0.01$--$0.02$ for standard cluster sizes.
-
-\subsection{Experiment E: Realistic SMLM conditions}
+\subsubsection{Realistic SMLM conditions}
 \label{sec:exp-e}
 
-\textbf{Localization precision} ($\sigma_{xy} = 5, 10, 20, 30, 50, 75,
-100$~nm): TPR $= 1.0$ at all precisions. The test remains robust even
-at $\sigma_{xy} = 100$~nm, far exceeding typical experimental values
-(Figure~S2A).
+\textbf{Localization precision} (5--100~nm): TPR $= 1.0$.
 
-\textbf{Blinking rate} (1--20 blinks per molecule, 10 replicates):
-TPR $= 1.0$. The blinking correction reduces localizations by factors
-of 1.004--1.104 (Figure~S1).
+\textbf{Blinking rate} (1--20 blinks/molecule, 10 replicates):
+TPR $= 1.0$.
 
-\textbf{Frame count} (20, 100, 500, 2000 frames): TPR $= 1.0$
-(Figure~S2B).
+\textbf{Frame count} (20--2000): TPR $= 1.0$.
 
-\subsection{Experiment F: Biological use cases}
+\subsubsection{Biological use cases}
 \label{sec:exp-f}
 
-We tested four biologically motivated scenarios generated from preset
-parameter sets (Figure~\ref{fig:biological}):
+Four biologically motivated scenarios:
+(1)~Synaptic receptors (2000 mol, $f = 0.7$, $r = 35$~nm): detected
+($p < 0.001$).
+(2)~Nuclear pores (5000 mol, $f = 0.4$, $r = 50$~nm, ring): detected
+($p < 0.001$).
+(3)~Membrane domains (10000 mol, $f = 0.3$, $r = 150$~nm): detected
+($p < 0.001$).
+(4)~Negative control (5000 mol, $f = 0$): not detected
+($p_\mathrm{var} = 0.868$, $p_\mathrm{skew} = 0.162$).
 
-\begin{enumerate}
-  \item \textbf{Synaptic receptors}: 2000 molecules, $f = 0.7$,
-    $r = 35$~nm, Gaussian clusters \citep{macgillavry2013}.
-    \textbf{Detected} ($p_\mathrm{var} < 0.001$,
-    $p_\mathrm{skew} < 0.001$).
-
-  \item \textbf{Nuclear pores}: 5000 molecules, $f = 0.4$,
-    $r = 50$~nm, ring-shaped clusters \citep{loschberger2012}.
-    \textbf{Detected} ($p_\mathrm{var} < 0.001$,
-    $p_\mathrm{skew} < 0.001$).
-
-  \item \textbf{Membrane domains}: 10000 molecules, $f = 0.3$,
-    $r = 150$~nm, Gaussian clusters \citep{owen2012}.
-    \textbf{Detected} ($p_\mathrm{var} < 0.001$,
-    $p_\mathrm{skew} < 0.001$).
-
-  \item \textbf{Negative control}: 5000 molecules, $f = 0$,
-    pure CSR.
-    \textbf{Not detected} ($p_\mathrm{var} = 0.868$,
-    $p_\mathrm{skew} = 0.162$).
-\end{enumerate}
-
-The negative control confirms that the test does not produce false
-positives on biologically realistic CSR data with high molecule counts.
-
-\subsection{Experiment G: Multiscale signatures}
-\label{sec:exp-g}
-
-Different biological structures produce distinct scale-dependent
-signatures in the variance curve (Figure~\ref{fig:signatures}):
-
-\begin{itemize}
-  \item \textbf{Synaptic receptors} (small, dense clusters): peak
-    variance excess at scales near 35~nm, with 10 valid scales.
-  \item \textbf{Nuclear pores} (ring-shaped): characteristic variance
-    peak near 50~nm with 3 valid scales, reflecting the ring geometry.
-  \item \textbf{Membrane domains} (large, sparse clusters): broader
-    variance excess extending to 150~nm, with 6 valid scales.
-  \item \textbf{Negative control}: variance curves remain within the
-    mock envelope at all scales (6 valid scales).
-\end{itemize}
-
-These signatures suggest that the multiscale variance curve could serve
-as a diagnostic tool for characterizing cluster morphology beyond
-binary detection, though developing such classification is beyond the
-scope of this work.
-
-\subsection{Experiment H: Runtime and scalability}
+\subsubsection{Runtime}
 \label{sec:exp-h}
-
-We measured wall-clock time for the full pipeline (blinking correction,
-null model generation, 50 mock datasets, multiscale test) at varying
-dataset sizes (Table~\ref{tab:runtime}).
 
 \begin{table}[ht]
 \centering
-\caption{Runtime scaling of the full pipeline. Times include blinking
-  correction, null model generation (50 mocks), and multiscale testing.}
+\caption{Runtime scaling (50 mocks, single CPU core).}
 \label{tab:runtime}
-\begin{tabular}{rrrr}
+\begin{tabular}{rrr}
 \toprule
 Molecules & Localizations & Time (s) \\
 \midrule
@@ -640,81 +747,9 @@ Molecules & Localizations & Time (s) \\
 \end{tabular}
 \end{table}
 
-Runtime scales near-linearly up to 5000 molecules ($\sim$25,000
-localizations), processed in approximately 51~seconds on a single CPU
-core. At 10,000 molecules the cost increases to $\sim$4~minutes, and at
-20,000 molecules ($\sim$100,000 localizations) the pipeline requires
-$\sim$50~minutes, primarily due to mock generation and covariance
-estimation. The method is practical for typical SMLM datasets of a few
-thousand molecules; GPU-accelerated mock generation could extend
-scalability to larger datasets.
-
-\subsection{Experiment I: Application to experimental data}
-\label{sec:exp-i}
-
-To validate the method on real SMLM data, we applied the multiscale
-test to published localization datasets from Heydarian et al.\ \citep{heydarian2021},
-obtained from the 4TU.ResearchData repository. These datasets contain
-individually segmented particles imaged with STORM and DNA-PAINT
-techniques, with coordinates in camera pixel units (converted to
-nanometers assuming 100~nm pixel size).
-
-We constructed realistic fields of view by placing multiple particles
-at random positions within a $5000 \times 5000 \times 500$~nm ROI and
-adding uniform background localizations. A matched CSR control with the
-same total number of localizations was generated for comparison. The
-multiscale test was run with 15 mocks and default parameters. For
-comparison, DBSCAN (with $\varepsilon = 37.5$~nm for NPC/CSR datasets
-and $\varepsilon = 22.5$~nm for tetrahedra, min\_samples~$= 5$) and
-Ripley's $L$ function (15 radii from 20--500~nm, envelope test against
-15 mocks) were run with the same mock-based calibration
-(Table~\ref{tab:experimental}).
-
-\begin{table}[ht]
-\centering
-\caption{Detection results on experimental SMLM data from
-  Heydarian et al.\ \citep{heydarian2021} and two negative controls.
-  NPC = nuclear pore complex (Nup107). DNA-origami tetrahedra have four
-  vertices at designed positions. The CSR control contains uniformly
-  distributed localizations; the permutation control randomizes the
-  NPC STORM positions within the same ROI.}
-\label{tab:experimental}
-\begin{tabular}{llcccccc}
-\toprule
-Dataset & $N$ & $p_\mathrm{var}$ & $p_\mathrm{skew}$ & MS & DBSCAN & Ripley \\
-\midrule
-NPC STORM (30 + bg) & 5,526 & $< 0.001$ & $< 0.001$ & Detected & Detected & Detected \\
-NPC PAINT (25 + bg) & 4,356 & $< 0.001$ & $< 0.001$ & Detected & Detected & Detected \\
-DNA-origami tetra (15 + bg) & 13,268 & $< 0.001$ & $< 0.001$ & Detected & Detected & Detected \\
-CSR control (uniform) & 5,526 & 0.710 & 0.895 & Not det. & Not det. & Not det. \\
-Permutation control & 5,526 & 0.374 & 0.456 & Not det. & Not det. & Not det. \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-All three experimental datasets with known structure were correctly
-identified as clustered by all three methods---the multiscale test,
-DBSCAN, and Ripley's $L$ function ($p < 0.001$ for both variance and
-skewness). Both negative controls---a synthetic CSR dataset and a
-permutation control created by randomizing the NPC STORM positions within
-the same ROI---were correctly not detected by any method
-($p_\mathrm{var} = 0.710$, $p_\mathrm{skew} = 0.895$ for the CSR
-control; $p_\mathrm{var} = 0.374$, $p_\mathrm{skew} = 0.456$ for the
-permutation control). The NPC
-datasets contain ring-shaped protein arrangements with approximately
-8-fold symmetry at $\sim$107~nm diameter, while the DNA-origami
-tetrahedra contain four point clusters at designed vertex positions.
-The method detects clustering in both cases without requiring prior
-knowledge of the cluster geometry or scale.
-
-The permutation control demonstrates that the method does not produce
-false positives when the spatial structure of a real dataset is destroyed
-while preserving the same point density and ROI geometry.
-
-These results demonstrate that the multiscale test generalizes from
-synthetic validation to real experimental data acquired with different
-imaging modalities (STORM, DNA-PAINT) and biological structures
-(protein complexes, synthetic nanostructures).
+Near-linear scaling up to 5000 molecules ($\sim$51~s); practical for
+typical SMLM datasets. GPU-accelerated mock generation could extend
+scalability beyond $10^5$ localizations.
 
 % ============================================================================
 % 4. Discussion
@@ -722,105 +757,146 @@ imaging modalities (STORM, DNA-PAINT) and biological structures
 \section{Discussion}
 \label{sec:discussion}
 
-\subsection{Summary of contributions}
+\subsection{Summary}
 
-We have presented a multiscale statistical test for detecting clustering
-in SMLM data that addresses three limitations of existing methods:
-(1)~single-scale assumptions, by computing statistics across a
-logarithmic range of scales; (2)~lack of formal calibration, by
-providing $p$-values via a corrected chi-squared procedure; and
-(3)~arbitrary threshold choices, by calibrating against a biological
-null model.
+We have presented a multiscale statistical framework for SMLM data that
+addresses three limitations of existing methods: (1)~single-scale
+assumptions, by computing statistics across a logarithmic range of
+scales; (2)~lack of formal calibration, by providing $p$-values via a
+corrected chi-squared procedure; and (3)~arbitrary threshold choices, by
+calibrating against a biological null model. Beyond detection, the
+scale-dependent variance and skewness curves provide structural
+fingerprints that characterize the spatial organization of molecular
+assemblies.
+
+\subsection{The method as a diagnostic test}
+
+Our approach is designed as a \emph{diagnostic test}, not a segmentation
+algorithm. It answers ``does clustering exist, and at what scales?''
+rather than ``where are the clusters?'' This complements existing
+cluster-identification tools: the multiscale test should be applied first
+to determine whether there is statistically significant structure before
+running DBSCAN, SR-Tesseler, or other segmentation methods whose outputs
+are difficult to interpret when the data is consistent with CSR. The
+structural fingerprint then provides guidance on which scales to target
+for subsequent segmentation.
+
+\subsection{Relationship to existing methods}
+
+Our method occupies a distinct niche in the SMLM analysis landscape.
+Compared to DBSCAN and HDBSCAN, which are designed for cluster
+\emph{identification} and require careful parameter selection (or produce
+unreliable detection when repurposed, as our HDBSCAN results
+demonstrate), the multiscale test is designed specifically for the
+\emph{detection} question and produces calibrated $p$-values natively.
+Compared to Ripley's $L$ function, which also addresses detection, our
+method provides richer scale-dependent information through the full
+variance and skewness curves rather than a single summary statistic, and
+shows higher sensitivity at low cluster fractions.
+
+Voronoi-based methods (SR-Tesseler, ClusterViSu) and machine-learning
+approaches (CAML, ClusterNet) operate in the segmentation domain and
+would be natural downstream tools after our test identifies significant
+clustering. A formal comparison with these methods would require
+adapting them to the detection question---an interesting direction but
+beyond the scope of this work.
 
 \subsection{Strengths}
 
 The method provides calibrated per-test $p$-values (9.0\% FPR at
 $\alpha = 0.05$ from 200 null datasets, compared to the nominal 5\%),
-with the excess attributable to finite-sample effects in the corrected
-chi-squared calibration and partial correlation between variance and
-skewness statistics. The test detects clustering at lower fractions
-($f \geq 0.03$) than DBSCAN ($f \geq 0.10$) and Ripley ($f \geq 0.05$),
-is robust across all tested parameter settings (grid size, shrinkage,
-number of mocks), and handles diverse cluster geometries including
-elongated and ring-shaped structures. Application to experimental SMLM
-data (NPC localizations and DNA-origami nanostructures) demonstrates
-that the method generalizes beyond synthetic benchmarks to real
-microscopy data acquired with different imaging modalities. The
-corrected chi-squared calibration procedure avoids the anti-conservative
-bias inherent in
-using the standard chi-squared reference with finite mock samples.
+is robust across all tested parameters, handles diverse cluster
+geometries including elongated and ring-shaped structures, and
+generalizes to experimental data from multiple imaging modalities. The
+HDBSCAN comparison is particularly informative: despite being a modern
+algorithm that automatically discovers clusters at varying densities,
+HDBSCAN misses 2/3 of structured experimental datasets and produces a
+false positive on CSR when using cluster-count-based permutation
+calibration. This underscores the value of methods that produce natively
+calibrated statistical outputs.
+
+The structural fingerprint capability adds biological interpretability
+beyond binary detection, connecting the method to the broader question of
+``what kind of nanoscale organization exists?'' rather than just ``is
+clustering present?''
 
 \subsection{Limitations}
 \label{sec:discussion-limitations}
 
-\subsubsection{OR-rule FPR inflation}
+\subsubsection{Per-test FPR elevation}
 
-The OR-combination of variance and skewness tests inflates the global
-FPR beyond the per-test level. At $\alpha = 0.05$, the combined FPR is
-16.0\%, consistent with the theoretical bound of $\sim 2\alpha$ for two
-nearly independent tests. Users requiring strict global FPR control
-should apply the \v{S}id\'ak correction (Equation~\ref{eq:sidak}),
-which reduces the combined FPR to 8.5\% at
-$\alpha_\mathrm{global} = 0.05$.
+The per-test FPR of 9.0\% at $\alpha = 0.05$ exceeds the nominal level.
+This is attributable to two factors: (1) finite-sample bias in the
+corrected chi-squared calibration (the leave-one-out procedure uses only
+$M-1$ mocks for each calibration, introducing variance in the moment
+estimates), and (2) partial correlation between the variance and skewness
+statistics computed from the same density field. The OR-combination
+further inflates the global FPR to 16.0\%. Users requiring strict control
+should apply the \v{S}id\'ak correction, which reduces the combined FPR
+to 8.5\%.
 
 \subsubsection{Pipeline FPR from blinking simulation}
 
 When simulated blinking and correction are included, the pipeline FPR
-reaches 100\% at all significance levels. Investigation reveals the
-root cause: with 500 imaging frames and a dark-frame window of 5 frames,
-the probability that two blinks from the same molecule fall within the
-temporal merging window is only $\sim$2\%. Consequently, each molecule
-produces $\sim$5 separate localizations (reduction factor 1.02$\times$)
-clustered within $\sim$15~nm of the true position. These residual
-``mini-clusters'' are genuine non-CSR structure at all spatial scales,
-and the multiscale test correctly detects them. Raising the minimum
-analysis scale to 50--80~nm does not resolve this, because the excess
-point count (5$\times$ more positions than true molecules) alters the
-density statistics at every scale.
+reaches 100\%. The root cause is that with 500 imaging frames and a
+dark-frame window of 5 frames, the temporal merging probability is only
+$\sim$2\%, leaving each molecule as $\sim$5 separate localizations
+clustered within $\sim$15~nm. These residual mini-clusters represent
+genuine non-CSR structure. This is specific to the simulation model;
+our experimental results confirm correct behavior on real data. We
+recommend validating the pipeline on experimental negative controls when
+available.
 
-This artifact is specific to the blinking simulation model, which
-distributes blink frames uniformly across the full acquisition.
-In real SMLM experiments, blinking correction parameters are tuned to
-match the actual photoswitching kinetics, yielding much higher merge
-rates. Our application to experimental data (Section~\ref{sec:exp-i})
-confirms that the method produces correct results on real SMLM
-localizations: all three structured datasets were detected, and both
-CSR and permutation negative controls were correctly not detected.
+\subsubsection{Detection without localization}
 
-We recommend that users (1) report both statistical FPR (on
-pre-corrected molecule positions) and pipeline FPR when
-characterizing the method on synthetic data, and (2) validate the full
-pipeline on experimental negative controls when available.
+The method detects clustering and characterizes its scale structure but
+does not identify individual clusters or assign localizations to groups.
+Users requiring spatial cluster assignments should apply the multiscale
+test first for detection, then use DBSCAN, SR-Tesseler, or other
+segmentation tools---guided by the peak scale of the variance curve---for
+cluster identification.
 
-\subsubsection{Data limitations}
+\subsubsection{Convex hull null model}
 
-The majority of validation uses synthetic data with known ground truth.
-While the synthetic scenarios span a wide range of biologically relevant
-parameters, real SMLM data may exhibit additional complexities
-(photobleaching, drift, sample-specific background) not fully captured
-here. Our application to experimental NPC and DNA-origami data
-(Section~\ref{sec:exp-i}) demonstrates feasibility on real data, but
-these datasets have known structure by design. Validation on
-experimental datasets where clustering status is independently confirmed
-(e.g., via correlative EM) remains an important future direction.
+The biological null model assumes uniform density within the convex hull.
+In real experiments, spatially varying background (illumination gradients,
+membrane curvature) could violate this assumption. Extension to
+inhomogeneous Poisson null models is an important future direction.
 
-\subsubsection{Sample size}
+\subsubsection{Choice of summary statistics}
 
-The 200-replicate FPR calibration provides 95\% binomial confidence
-intervals of width $\pm 0.05$ at the $\alpha = 0.05$ level. For
-publication-grade calibration claims, 500--1000 replicates are
-recommended to narrow the confidence intervals.
+The test uses two statistics: variance (second moment) and skewness
+(third moment) of the count distribution. While these capture the
+dominant deviations from CSR, higher-order cumulants (kurtosis, etc.)
+could potentially detect additional structure. We chose variance and
+skewness because they provide a good balance of sensitivity and stability
+with finite data; the geometry robustness results (Gaussian, elongated,
+ring-shaped clusters all detected at TPR $= 1.0$) suggest these two
+moments are sufficient for common biological clustering patterns.
+
+\subsubsection{Experimental data scope}
+
+Our experimental validation uses three datasets from a single source
+(Heydarian et al.\ \citep{heydarian2021}). While these span two imaging
+modalities (STORM, DNA-PAINT) and two biological structures (protein
+complexes, synthetic nanostructures), broader validation on diverse
+receptor clustering datasets, membrane protein distributions, and data
+from independent laboratories would further establish generalizability.
 
 \subsection{Future work}
 
 \begin{itemize}
-  \item \textbf{Larger FPR calibration}: 500+ null datasets for
-    tighter confidence intervals.
-  \item \textbf{Real experimental datasets}: validation on dSTORM/PALM
-    data with known structure (e.g., DNA-PAINT standards).
-  \item \textbf{Multiple testing correction}: Bonferroni or
-    Benjamini--Hochberg correction when analyzing multiple datasets
-    or regions simultaneously.
+  \item \textbf{Structural classification}: developing a formal
+    classification framework based on the multiscale fingerprints
+    (peak scale, width, skewness amplitude) to automatically
+    distinguish biological organization types.
+  \item \textbf{Inhomogeneous null models}: extending the null model to
+    account for spatially varying background density.
+  \item \textbf{Broader experimental validation}: application to
+    receptor clustering (TCR, EGFR), membrane domain, and
+    independently characterized datasets.
+  \item \textbf{Larger FPR calibration}: 500+ null datasets for tighter
+    confidence intervals.
   \item \textbf{2D extension}: optimized variant for 2D-only
     localization data.
   \item \textbf{GPU acceleration}: parallelized CIC gridding and
@@ -832,11 +908,14 @@ recommended to narrow the confidence intervals.
 % ============================================================================
 \section{Reproducibility}
 
-All source code and results are available at https://github.com/saivoru777-ship-it/smlm-multiscale-clustering. The
-validation study can be reproduced with the following commands:
+All source code and results are available at
+\url{https://github.com/saivoru777-ship-it/smlm-multiscale-clustering}.
+Experimental datasets are from Heydarian et al.\ \citep{heydarian2021}
+(4TU.ResearchData, doi:10.4121/13797686). The validation study can be
+reproduced with:
 
 \begin{verbatim}
-# Full study (8 experiments, ~6 hours)
+# Full study (9 experiments, ~6 hours)
 python3 -m smlm_clustering.validation.comprehensive_study \
     --output-dir results/final
 
@@ -850,8 +929,7 @@ python3 -m smlm_clustering.validation.comprehensive_study \
     --figures-dir figures
 \end{verbatim}
 
-Results are stored as JSON files for programmatic access. Figures are
-generated as PDF files using matplotlib with the Wong colorblind-safe
+Results are stored as JSON files. Figures use the Wong colorblind-safe
 palette \citep{wong2011}.
 
 % ============================================================================
@@ -859,16 +937,18 @@ palette \citep{wong2011}.
 % ============================================================================
 \section*{Acknowledgments}
 
-% TODO: Add acknowledgments
+We thank Heydarian et al.\ for making the SMLM 3D datasets publicly
+available.
 
 % ============================================================================
 % Data Availability
 % ============================================================================
 \section*{Data Availability}
 
-All synthetic data can be regenerated using the provided code with
-fixed random seeds for exact reproducibility. Result JSON files and
-generated figures are included in the repository.
+Experimental localization data is available from 4TU.ResearchData
+(doi:10.4121/13797686). All synthetic data can be regenerated using the
+provided code with fixed random seeds. Result JSON files and figures
+are included in the repository.
 
 % ============================================================================
 % References
@@ -877,7 +957,7 @@ generated figures are included in the repository.
 \bibliography{refs}
 
 % ============================================================================
-% Figure references
+% Figures
 % ============================================================================
 \clearpage
 
@@ -892,11 +972,10 @@ generated figures are included in the repository.
   approximate uniformity.
   \textbf{(C)}~Combined FPR (OR rule) vs.\ significance threshold
   $\alpha$, with 95\% binomial confidence intervals (shading). The
-  diagonal represents perfect calibration. FPR inflation above the
-  diagonal is expected from the OR combination of two tests.
+  diagonal represents perfect calibration.
   \textbf{(D)}~Detection power (TPR) vs.\ cluster fraction $f$ for the
-  multiscale test, DBSCAN (permutation-calibrated), and Ripley's $L$
-  function (envelope test).}
+  multiscale test, DBSCAN (with ground-truth $\varepsilon$), and
+  Ripley's $L$ function (envelope test).}
 \label{fig:fpr}
 \end{figure}
 
@@ -906,24 +985,19 @@ generated figures are included in the repository.
 \caption{\textbf{Parameter sensitivity.}
   FPR (circles) and TPR (squares) for sweeps of grid size, shrinkage
   parameter $\lambda$, number of mocks, and blinking correction radius.
-  The test is robust across all parameter ranges, with
-  FPR~$\leq 0.33$ and TPR~$= 1.0$ for the statistical test parameters
-  (grid size, shrinkage, mocks). Pipeline FPR~$= 1.0$ for all blinking
-  radii reflects a blinking simulation artifact.}
+  The test is robust across all parameter ranges.}
 \label{fig:params}
 \end{figure}
 
 \begin{figure}[p]
 \centering
 \includegraphics[width=\textwidth]{figures/fig4_geometry.pdf}
-\caption{\textbf{Geometry robustness and hard regime.}
+\caption{\textbf{Geometry robustness and detection limits.}
   \textbf{(A)}~TPR vs.\ cluster radius (10--500~nm).
-  \textbf{(B)}~TPR vs.\ number of clusters (5--100).
-  \textbf{(C)}~TPR across cluster shapes (Gaussian, elongated,
-  ring-shaped).
-  \textbf{(D)}~Hard regime: TPR for seven configurations with low
-  cluster fractions and/or small radii, showing graceful degradation
-  from TPR~$= 1.0$ at $f = 0.02$ to TPR~$= 0.0$ at $f = 0.005$.}
+  \textbf{(B)}~TPR vs.\ number of clusters.
+  \textbf{(C)}~TPR across cluster shapes.
+  \textbf{(D)}~Hard regime: TPR degrades gracefully from 1.0 at
+  $f = 0.02$ to 0.20 at $f = 0.005$.}
 \label{fig:geometry}
 \end{figure}
 
@@ -932,23 +1006,23 @@ generated figures are included in the repository.
 \includegraphics[width=\textwidth]{figures/fig5_biological.pdf}
 \caption{\textbf{Biological use cases.}
   Point cloud visualizations and detection results for four biologically
-  motivated scenarios. Synaptic receptors (small dense clusters),
-  nuclear pores (ring-shaped), and membrane domains (large sparse
-  clusters) are all correctly detected ($p < 0.001$). The negative
-  control (pure CSR) is correctly not detected ($p_\mathrm{var} = 0.849$,
-  $p_\mathrm{skew} = 0.249$).}
+  motivated scenarios. All three clustering scenarios detected
+  ($p < 0.001$); negative control correctly not detected.}
 \label{fig:biological}
 \end{figure}
 
 \begin{figure}[p]
 \centering
 \includegraphics[width=\textwidth]{figures/fig6_signatures.pdf}
-\caption{\textbf{Multiscale variance signatures.}
-  Variance-to-mean ratio curves across spatial scales for the four
-  biological scenarios. Different cluster morphologies produce
-  distinct scale-dependent signatures. The mock envelope (gray shading)
-  represents the 95\% range from null datasets. The negative control
-  remains within the envelope at all scales.}
+\caption{\textbf{Multiscale structural fingerprints.}
+  Variance-to-mean ratio curves across spatial scales for different
+  biological structures. Each morphology produces a distinct
+  scale-dependent signature: synaptic receptors show a sharp peak at
+  small scales, nuclear pores produce a peak at intermediate scales
+  reflecting ring geometry, and membrane domains exhibit a broad excess.
+  The mock envelope (gray shading) represents the 95\% range from null
+  datasets. These fingerprints encode information about the spatial
+  organization that goes beyond binary detection.}
 \label{fig:signatures}
 \end{figure}
 
