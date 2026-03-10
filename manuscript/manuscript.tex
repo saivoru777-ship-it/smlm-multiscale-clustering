@@ -21,12 +21,10 @@
        single-molecule localization microscopy}
 
 \author{%
-  % TODO: Add author names and affiliations
-  Author One\textsuperscript{1,*},
-  Author Two\textsuperscript{1}
+  Pretham Voruganti\textsuperscript{1,*}
   \\[6pt]
-  \textsuperscript{1}Department, Institution, City, Country \\
-  \textsuperscript{*}Corresponding author: \texttt{email@institution.edu}
+  \textsuperscript{1}Purdue University, West Lafayette, IN, USA \\
+  \textsuperscript{*}Corresponding author: \texttt{pvoruga@purdue.edu}
 }
 
 \date{}
@@ -660,37 +658,51 @@ We constructed realistic fields of view by placing multiple particles
 at random positions within a $5000 \times 5000 \times 500$~nm ROI and
 adding uniform background localizations. A matched CSR control with the
 same total number of localizations was generated for comparison. The
-multiscale test was run with 30 mocks and default parameters
+multiscale test was run with 15 mocks and default parameters. For
+comparison, DBSCAN (with $\varepsilon = 37.5$~nm for NPC/CSR datasets
+and $\varepsilon = 22.5$~nm for tetrahedra, min\_samples~$= 5$) was run
+with the same mock-based permutation calibration
 (Table~\ref{tab:experimental}).
 
 \begin{table}[ht]
 \centering
-\caption{Multiscale test results on experimental SMLM data from
-  Heydarian et al.\ \citep{heydarian2021}. NPC = nuclear pore complex, Nup107 protein.
-  DNA-origami tetrahedra have four vertices at designed positions.
-  The CSR control contains the same number of uniformly distributed
-  localizations as the NPC STORM dataset.}
+\caption{Detection results on experimental SMLM data from
+  Heydarian et al.\ \citep{heydarian2021} and two negative controls.
+  NPC = nuclear pore complex (Nup107). DNA-origami tetrahedra have four
+  vertices at designed positions. The CSR control contains uniformly
+  distributed localizations; the permutation control randomizes the
+  NPC STORM positions within the same ROI.}
 \label{tab:experimental}
-\begin{tabular}{llccl}
+\begin{tabular}{llccccc}
 \toprule
-Dataset & $N$ & $p_\mathrm{var}$ & $p_\mathrm{skew}$ & Result \\
+Dataset & $N$ & $p_\mathrm{var}$ & $p_\mathrm{skew}$ & MS & DBSCAN \\
 \midrule
-NPC STORM (30 particles + bg) & 5,321 & $< 0.001$ & $< 0.001$ & Detected \\
-NPC PAINT (25 particles + bg) & 3,566 & $< 0.001$ & $< 0.001$ & Detected \\
-DNA-origami tetrahedra (15 + bg) & 10,549 & $< 0.001$ & $< 0.001$ & Detected \\
-CSR control (uniform) & 5,321 & 0.441 & 0.322 & Not detected \\
+NPC STORM (30 + bg) & 5,526 & $< 0.001$ & $< 0.001$ & Detected & Detected \\
+NPC PAINT (25 + bg) & 4,356 & $< 0.001$ & $< 0.001$ & Detected & Detected \\
+DNA-origami tetra (15 + bg) & 13,268 & $< 0.001$ & $< 0.001$ & Detected & Detected \\
+CSR control (uniform) & 5,526 & 0.710 & 0.895 & Not det. & Not det. \\
+Permutation control & 5,526 & 0.374 & 0.456 & Not det. & Not det. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 All three experimental datasets with known structure were correctly
-identified as clustered ($p < 0.001$ for both variance and skewness),
-while the CSR control was correctly not detected ($p_\mathrm{var} =
-0.441$, $p_\mathrm{skew} = 0.322$). The NPC datasets contain ring-shaped
-protein arrangements with approximately 8-fold symmetry at $\sim$107~nm
-diameter, while the DNA-origami tetrahedra contain four point clusters
-at designed vertex positions. The method detects clustering in both
-cases without requiring prior knowledge of the cluster geometry or scale.
+identified as clustered by both the multiscale test and DBSCAN
+($p < 0.001$ for both variance and skewness). Both negative
+controls---a synthetic CSR dataset and a permutation control created by
+randomizing the NPC STORM positions within the same ROI---were correctly
+not detected by either method ($p_\mathrm{var} = 0.710$,
+$p_\mathrm{skew} = 0.895$ for the CSR control; $p_\mathrm{var} = 0.374$,
+$p_\mathrm{skew} = 0.456$ for the permutation control). The NPC
+datasets contain ring-shaped protein arrangements with approximately
+8-fold symmetry at $\sim$107~nm diameter, while the DNA-origami
+tetrahedra contain four point clusters at designed vertex positions.
+The method detects clustering in both cases without requiring prior
+knowledge of the cluster geometry or scale.
+
+The permutation control demonstrates that the method does not produce
+false positives when the spatial structure of a real dataset is destroyed
+while preserving the same point density and ROI geometry.
 
 These results demonstrate that the multiscale test generalizes from
 synthetic validation to real experimental data acquired with different
@@ -747,16 +759,31 @@ $\alpha_\mathrm{global} = 0.05$.
 \subsubsection{Pipeline FPR from blinking simulation}
 
 When simulated blinking and correction are included, the pipeline FPR
-reaches 100\% at all significance levels. Investigation reveals that
-the blinking simulation model creates subtle non-CSR spatial structure
-(through the stochastic placement of blinks near molecule positions)
-that persists after merging and is detected by the sensitive multiscale
-test. This artifact is specific to the blinking simulation model used
-in our synthetic data generation and may not reflect the behavior of
-real experimental data where blinking statistics differ. We recommend
-that users (1) report both statistical FPR (molecule positions) and
-pipeline FPR, and (2) validate the full pipeline on experimental
-negative controls when available.
+reaches 100\% at all significance levels. Investigation reveals the
+root cause: with 500 imaging frames and a dark-frame window of 5 frames,
+the probability that two blinks from the same molecule fall within the
+temporal merging window is only $\sim$2\%. Consequently, each molecule
+produces $\sim$5 separate localizations (reduction factor 1.02$\times$)
+clustered within $\sim$15~nm of the true position. These residual
+``mini-clusters'' are genuine non-CSR structure at all spatial scales,
+and the multiscale test correctly detects them. Raising the minimum
+analysis scale to 50--80~nm does not resolve this, because the excess
+point count (5$\times$ more positions than true molecules) alters the
+density statistics at every scale.
+
+This artifact is specific to the blinking simulation model, which
+distributes blink frames uniformly across the full acquisition.
+In real SMLM experiments, blinking correction parameters are tuned to
+match the actual photoswitching kinetics, yielding much higher merge
+rates. Our application to experimental data (Section~\ref{sec:exp-i})
+confirms that the method produces correct results on real SMLM
+localizations: all three structured datasets were detected, and both
+CSR and permutation negative controls were correctly not detected.
+
+We recommend that users (1) report both statistical FPR (on
+pre-corrected molecule positions) and pipeline FPR when
+characterizing the method on synthetic data, and (2) validate the full
+pipeline on experimental negative controls when available.
 
 \subsubsection{Data limitations}
 
