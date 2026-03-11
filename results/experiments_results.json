@@ -1,0 +1,81 @@
+{
+  "fpr_fixes": {
+    "mol_pos_20nm": {
+      "detected": 0,
+      "total": 10,
+      "fpr": 0.0
+    },
+    "pipeline_20nm": {
+      "detected": 10,
+      "total": 10,
+      "fpr": 1.0
+    },
+    "pipeline_50nm": {
+      "detected": 10,
+      "total": 10,
+      "fpr": 1.0
+    },
+    "pipeline_80nm": {
+      "detected": 10,
+      "total": 10,
+      "fpr": 1.0
+    }
+  },
+  "experimental_baselines": {
+    "npc_storm": {
+      "label": "NPC STORM",
+      "n": 5526,
+      "ms_p_var": 0.0,
+      "ms_p_skew": 0.0,
+      "ms_det": true,
+      "dbscan_clusters": 46,
+      "dbscan_det": true,
+      "ripley_Lmax": NaN,
+      "ripley_det": false
+    },
+    "npc_paint": {
+      "label": "NPC PAINT",
+      "n": 4356,
+      "ms_p_var": 0.0,
+      "ms_p_skew": 0.0,
+      "ms_det": true,
+      "dbscan_clusters": 32,
+      "dbscan_det": true,
+      "ripley_Lmax": NaN,
+      "ripley_det": false
+    },
+    "tetra": {
+      "label": "DNA-origami tetra",
+      "n": 13268,
+      "ms_p_var": 0.0,
+      "ms_p_skew": 0.0,
+      "ms_det": true,
+      "dbscan_clusters": 21,
+      "dbscan_det": true,
+      "ripley_Lmax": NaN,
+      "ripley_det": false
+    },
+    "csr": {
+      "label": "CSR control",
+      "n": 5526,
+      "ms_p_var": 0.7096672033023166,
+      "ms_p_skew": 0.8947293509778588,
+      "ms_det": false,
+      "dbscan_clusters": 0,
+      "dbscan_det": false,
+      "ripley_Lmax": NaN,
+      "ripley_det": false
+    },
+    "permutation": {
+      "label": "Permutation control",
+      "n": 5526,
+      "ms_p_var": 0.3738626788721844,
+      "ms_p_skew": 0.45608494006183997,
+      "ms_det": false,
+      "dbscan_clusters": 0,
+      "dbscan_det": false,
+      "ripley_Lmax": NaN,
+      "ripley_det": false
+    }
+  }
+}

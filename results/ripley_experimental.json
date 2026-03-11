@@ -1,0 +1,27 @@
+{
+  "NPC STORM": {
+    "detected": true,
+    "Lmax": 218.8322932954278,
+    "mock_95": 1.766969455877849
+  },
+  "NPC PAINT": {
+    "detected": true,
+    "Lmax": 196.27923285886448,
+    "mock_95": 2.5375737229684656
+  },
+  "DNA-origami tetra": {
+    "detected": true,
+    "Lmax": 420.513249343598,
+    "mock_95": 0.6228681184447745
+  },
+  "CSR control": {
+    "detected": false,
+    "Lmax": 0.34157677692167,
+    "mock_95": 1.6479306437057646
+  },
+  "Permutation control": {
+    "detected": false,
+    "Lmax": -0.3225320291995999,
+    "mock_95": 1.5449874278255975
+  }
+}

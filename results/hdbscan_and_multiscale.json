@@ -1,0 +1,117 @@
+{
+  "hdbscan_experimental": {
+    "NPC STORM": {
+      "n_clusters": 29,
+      "n_noise": 1712,
+      "mock_95": 28.599999999999998,
+      "detected": true
+    },
+    "NPC PAINT": {
+      "n_clusters": 24,
+      "n_noise": 1578,
+      "mock_95": 25.0,
+      "detected": false
+    },
+    "DNA-origami tetra": {
+      "n_clusters": 60,
+      "n_noise": 3000,
+      "mock_95": 61.199999999999996,
+      "detected": false
+    },
+    "CSR control": {
+      "n_clusters": 31,
+      "n_noise": 4246,
+      "mock_95": 28.799999999999994,
+      "detected": true
+    },
+    "Permutation control": {
+      "n_clusters": 2,
+      "n_noise": 2267,
+      "mock_95": 30.599999999999998,
+      "detected": false
+    }
+  },
+  "mixed_scale": {
+    "trial_1": {
+      "ms_det": true,
+      "ms_pv": 0.0,
+      "ms_ps": 0.0,
+      "dbscan_small_det": true,
+      "dbscan_small_clusters": 2,
+      "dbscan_large_det": true,
+      "dbscan_large_clusters": 87,
+      "hdbscan_det": true,
+      "hdbscan_clusters": 44,
+      "ripley_det": true,
+      "ripley_Lmax": 31.311733056832082,
+      "variance_scales": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "variance_values": [
+        0.33648704260958706,
+        0.8021288686833236,
+        1.115814087642768,
+        1.4474284922592404,
+        2.215459490960324
+      ]
+    },
+    "trial_2": {
+      "ms_det": true,
+      "ms_pv": 0.0,
+      "ms_ps": 0.0,
+      "dbscan_small_det": true,
+      "dbscan_small_clusters": 2,
+      "dbscan_large_det": true,
+      "dbscan_large_clusters": 66,
+      "hdbscan_det": true,
+      "hdbscan_clusters": 37,
+      "ripley_det": true,
+      "ripley_Lmax": 31.992679728555572,
+      "variance_scales": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "variance_values": [
+        0.34083762031247583,
+        0.777374144673416,
+        1.0566091932657853,
+        1.4643609982022996,
+        2.087737271441283
+      ]
+    },
+    "trial_3": {
+      "ms_det": true,
+      "ms_pv": 0.0,
+      "ms_ps": 0.0,
+      "dbscan_small_det": true,
+      "dbscan_small_clusters": 3,
+      "dbscan_large_det": true,
+      "dbscan_large_clusters": 70,
+      "hdbscan_det": true,
+      "hdbscan_clusters": 44,
+      "ripley_det": true,
+      "ripley_Lmax": 30.683608891077057,
+      "variance_scales": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "variance_values": [
+        0.3412511673558819,
+        0.8046446803259474,
+        1.1031864995823255,
+        1.4394051925782727,
+        2.279126976602422
+      ]
+    }
+  }
+}
