@@ -1,0 +1,22 @@
+{
+  "mol_pos": {
+    "detected": 5,
+    "total": 5
+  },
+  "std_corr": {
+    "detected": 5,
+    "total": 5
+  },
+  "min50nm": {
+    "detected": 5,
+    "total": 5
+  },
+  "min80nm": {
+    "detected": 5,
+    "total": 5
+  },
+  "min100nm": {
+    "detected": 5,
+    "total": 5
+  }
+}
